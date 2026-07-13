@@ -1,0 +1,18 @@
+# LawUP Training Dependencies
+# Install on Kaggle/Colab before running training:
+#   pip install -q -r requirements-training.txt
+#
+# Version constraints:
+#   - transformers >= 4.53.0 : SmolLM3 architecture support (model_type: "smollm3")
+#   - trl >= 1.0.0           : SFTConfig.max_length (renamed from max_seq_length)
+#   - peft >= 0.7.0          : LoRA + QLoRA support
+#   - bitsandbytes >= 0.41.0 : NF4 quantization on CUDA GPUs
+
+transformers>=4.53.0
+trl>=1.0.0
+peft>=0.7.0
+bitsandbytes>=0.41.0
+accelerate>=0.25.0
+datasets
+huggingface_hub
+pyyaml

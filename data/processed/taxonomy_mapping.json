@@ -1,0 +1,161 @@
+{
+  "version": "1.0",
+  "confirmed_date": "2026-07-11",
+  "source": "CUAD v1 category_descriptions.csv",
+  "phase_1_coverage_gaps": [
+    {
+      "category": "Confidentiality Scope",
+      "reason": "No CUAD annotation category exists. Phase 1 placeholder only."
+    },
+    {
+      "category": "Indemnification",
+      "reason": "No CUAD annotation category exists. Listed under Liability Exposure conceptually but not trainable in Phase 1."
+    }
+  ],
+  "risk_categories": {
+    "Assignment/Control Risk": {
+      "cuad_categories": [
+        "Anti-Assignment",
+        "Change Of Control",
+        "Third Party Beneficiary"
+      ],
+      "is_risk_flag": true
+    },
+    "Audit/Insurance Burden": {
+      "cuad_categories": [
+        "Audit Rights",
+        "Insurance"
+      ],
+      "is_risk_flag": true
+    },
+    "Auto-Renewal Trap": {
+      "cuad_categories": [
+        "Renewal Term"
+      ],
+      "is_risk_flag": true
+    },
+    "Commercial Commitment Constraints": {
+      "cuad_categories": [
+        "Minimum Commitment",
+        "Price Restrictions",
+        "Revenue/Profit Sharing",
+        "Volume Restriction"
+      ],
+      "is_risk_flag": true
+    },
+    "Dispute / Governing Law": {
+      "cuad_categories": [
+        "Covenant Not To Sue",
+        "Governing Law"
+      ],
+      "is_risk_flag": true
+    },
+    "IP Ownership Risk": {
+      "cuad_categories": [
+        "Affiliate License-Licensee",
+        "Affiliate License-Licensor",
+        "Ip Ownership Assignment",
+        "Irrevocable Or Perpetual License",
+        "Joint Ip Ownership",
+        "License Grant",
+        "Non-Transferable License",
+        "Source Code Escrow",
+        "Unlimited/All-You-Can-Eat-License"
+      ],
+      "is_risk_flag": true
+    },
+    "Liability Exposure": {
+      "cuad_categories": [
+        "Cap On Liability",
+        "Liquidated Damages",
+        "Uncapped Liability",
+        "Warranty Duration"
+      ],
+      "is_risk_flag": true
+    },
+    "Non-Compete / Exclusivity Overreach": {
+      "cuad_categories": [
+        "Competitive Restriction Exception",
+        "Exclusivity",
+        "No-Solicit Of Customers",
+        "No-Solicit Of Employees",
+        "Non-Compete"
+      ],
+      "is_risk_flag": true
+    },
+    "Preferential/Exclusivity Terms": {
+      "cuad_categories": [
+        "Most Favored Nation",
+        "Rofr/Rofo/Rofn"
+      ],
+      "is_risk_flag": true
+    },
+    "Reputational Restriction": {
+      "cuad_categories": [
+        "Non-Disparagement"
+      ],
+      "is_risk_flag": true
+    },
+    "Termination Risk": {
+      "cuad_categories": [
+        "Notice Period To Terminate Renewal",
+        "Post-Termination Services",
+        "Termination For Convenience"
+      ],
+      "is_risk_flag": true
+    },
+    "_metadata": {
+      "cuad_categories": [
+        "Agreement Date",
+        "Document Name",
+        "Effective Date",
+        "Expiration Date",
+        "Parties"
+      ],
+      "is_risk_flag": false
+    }
+  },
+  "cuad_to_lawup": {
+    "Affiliate License-Licensee": "IP Ownership Risk",
+    "Affiliate License-Licensor": "IP Ownership Risk",
+    "Agreement Date": "_metadata",
+    "Anti-Assignment": "Assignment/Control Risk",
+    "Audit Rights": "Audit/Insurance Burden",
+    "Cap On Liability": "Liability Exposure",
+    "Change Of Control": "Assignment/Control Risk",
+    "Competitive Restriction Exception": "Non-Compete / Exclusivity Overreach",
+    "Covenant Not To Sue": "Dispute / Governing Law",
+    "Document Name": "_metadata",
+    "Effective Date": "_metadata",
+    "Exclusivity": "Non-Compete / Exclusivity Overreach",
+    "Expiration Date": "_metadata",
+    "Governing Law": "Dispute / Governing Law",
+    "Insurance": "Audit/Insurance Burden",
+    "Ip Ownership Assignment": "IP Ownership Risk",
+    "Irrevocable Or Perpetual License": "IP Ownership Risk",
+    "Joint Ip Ownership": "IP Ownership Risk",
+    "License Grant": "IP Ownership Risk",
+    "Liquidated Damages": "Liability Exposure",
+    "Minimum Commitment": "Commercial Commitment Constraints",
+    "Most Favored Nation": "Preferential/Exclusivity Terms",
+    "No-Solicit Of Customers": "Non-Compete / Exclusivity Overreach",
+    "No-Solicit Of Employees": "Non-Compete / Exclusivity Overreach",
+    "Non-Compete": "Non-Compete / Exclusivity Overreach",
+    "Non-Disparagement": "Reputational Restriction",
+    "Non-Transferable License": "IP Ownership Risk",
+    "Notice Period To Terminate Renewal": "Termination Risk",
+    "Parties": "_metadata",
+    "Post-Termination Services": "Termination Risk",
+    "Price Restrictions": "Commercial Commitment Constraints",
+    "Renewal Term": "Auto-Renewal Trap",
+    "Revenue/Profit Sharing": "Commercial Commitment Constraints",
+    "Rofr/Rofo/Rofn": "Preferential/Exclusivity Terms",
+    "Source Code Escrow": "IP Ownership Risk",
+    "Termination For Convenience": "Termination Risk",
+    "Third Party Beneficiary": "Assignment/Control Risk",
+    "Uncapped Liability": "Liability Exposure",
+    "Unlimited/All-You-Can-Eat-License": "IP Ownership Risk",
+    "Volume Restriction": "Commercial Commitment Constraints",
+    "Warranty Duration": "Liability Exposure"
+  }
+}

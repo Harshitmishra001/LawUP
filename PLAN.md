@@ -178,6 +178,7 @@ Use a task-prefix or instruction-format approach to route the same adapter betwe
 - Google Colab free tier (T4, ~16GB VRAM, session limits apply). Checkpoint frequently — free-tier sessions disconnect without warning.
 - QLoRA (4-bit base + LoRA adapters) to fit comfortably in T4 memory.
 - Export the adapter (not a merged model) for portability; decide at deployment time whether to merge for inference speed or keep adapter-based for flexibility.
+- **T4 Hardware limitation:** PEFT locks LoRA adapters into `bfloat16`, which crashes the PyTorch `GradScaler` kernel on a T4 GPU (which lacks native `bfloat16` hardware). We bypassed this by disabling the `GradScaler` in `train.py`. This removes dynamic loss-scaling protection against fp16 gradient underflow, but training remained stable. This is a known, accepted limitation for T4 training. Do not re-enable the scaler without upgrading to an Ampere-class GPU (A100/A10G).
 
 ### 8.4 Known hard problems to test explicitly, not assume away
 - **Clause segmentation on raw uploaded contracts.** CUAD's master CSV comes pre-segmented — production ingestion of a raw PDF/DOCX does not. Real contracts have messy paragraph breaks and cross-references ("subject to clause 4.2"). This needs its own eval, not an assumption that a naive paragraph-splitter is good enough.
@@ -209,10 +210,10 @@ Use a task-prefix or instruction-format approach to route the same adapter betwe
 
 ## 13. Build Order / Milestones
 
-- [ ] **M1 — Taxonomy + data pipeline**: pull CUAD, confirm category mapping against real `category_descriptions.csv`, build contract-level splits, generate simplification distillation data, hand-curate adversarial eval set.
-- [ ] **M2 — Model training**: QLoRA fine-tune on Colab, evaluate against held-out CUAD test set + adversarial set, export adapter.
-- [ ] **M3 — Grounding corpus**: curate and index statute/standard-clause text for Phase 1 document types.
-- [ ] **M4 — Backend agent pipeline**: implement each step in Section 5 independently, with unit tests per module before wiring the full chain together.
+- [x] **M1 — Taxonomy + data pipeline**: pull CUAD, confirm category mapping against real `category_descriptions.csv`, build contract-level splits, generate simplification distillation data, hand-curate adversarial eval set.
+- [x] **M2 — Model training (Simplification Only)**: QLoRA fine-tune on Colab, evaluate against held-out adversarial set, export adapter. *Note: Classifier training deferred.*
+- [ ] **M3 — Inference & Backend (Simplifier)**: Merge the LoRA adapter into the base model, stand up the FastAPI simplifier endpoint, and confirm the merged model produces faithful rewrites on held-out real clauses.
+- [ ] **M4 — Classification & Verification**: Curate and index statute/standard-clause text for grounding. Train the meaning-preservation verifier and the risk classifier (separate from the M2 simplifier). Stand up the remaining FastAPI endpoints.
 - [ ] **M5 — Frontend**: Stitch exploration → Antigravity translation into Next.js, wired to backend API.
 - [ ] **M6 — Deployment plumbing**: Vercel + HF Spaces, environment config, end-to-end smoke test.
 - [ ] **M7 — Repo scaffolding**: set up early (see Section 14) so nothing gets bolted on inconsistently later — ideally done alongside M1, not after.

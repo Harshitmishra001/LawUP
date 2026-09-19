@@ -1,0 +1,384 @@
+﻿---
+language:
+- en
+license: apache-2.0
+tags:
+- legal
+- text-classification
+- cuad
+- qlora
+- smollm3
+base_model: HuggingFaceTB/SmolLM3-3B
+---
+# Model Card for lawup-classifier-smollm3-3b
+
+---
+
+## Model Details
+
+### Model Description
+
+lawup-classifier-smollm3-3b is a legal risk classification model built for the LawUP
+project. It is a QLoRA fine-tune of HuggingFaceTB/SmolLM3-3B, trained to identify
+applicable legal risk categories within individual contract clauses. Given a raw clause
+extracted from a commercial agreement, the model outputs a JSON list of zero or more
+risk labels (e.g., "Termination Risk", "Indemnification Risk").
+
+The adapter weights have been merged into the base model and exported to GGUF (Q8_0)
+format for efficient local inference via llama.cpp-compatible runtimes such as LM Studio.
+
+- **Developed by:** Harshit Mishra (HeavenlyDem0n)
+- **Funded by:** Self-funded / personal research project
+- **Shared by:** Harshit Mishra
+- **Model type:** Causal Language Model (LLM) -- fine-tuned for multi-label legal clause
+  classification via instruction following
+- **Language(s) (NLP):** English
+- **License:** Apache 2.0 (inherited from SmolLM3-3B base model)
+- **Finetuned from model:** HuggingFaceTB/SmolLM3-3B
+
+---
+
+### Model Sources
+
+- **Repository:** https://huggingface.co/HeavenlyDem0n/lawup-classifier-smollm3-3b
+- **Paper:** N/A (personal/research project)
+- **Demo:** Available via the LawUP FastAPI backend (/analyze endpoint)
+
+---
+
+## Uses
+
+### Direct Use
+
+This model is intended to be used as part of the LawUP legal document analysis pipeline.
+Its direct use case is:
+
+  - Input:  A single extracted clause from a commercial contract (plain text string).
+  - Output: A JSON list of applicable risk category labels, e.g.:
+              ["Termination Risk", "Indemnification Risk"]
+
+It is designed to run locally on consumer hardware via LM Studio or any llama.cpp-based
+inference server, making it suitable for privacy-sensitive legal document review
+workflows where documents cannot be sent to external APIs.
+
+### Downstream Use
+
+- Integration into the full LawUP 7-step pipeline:
+    1. Ingestion (clause extraction from PDF/DOCX)
+    2. Simplification (LLM rewrite to plain English)
+    3. Classification (this model)
+    4. Grounding (retrieve relevant statute/standard)
+    5. Meaning Preservation Verification (NLI entailment check)
+    6. Citation Grounding Verification
+    7. Report Assembly (structured legal risk report)
+- Can be adapted for other legal clause classification tasks by swapping the label
+  taxonomy in the system prompt.
+
+### Out-of-Scope Use
+
+- NOT a legal advisor. This model does not provide legal advice and should not be
+  used as a substitute for qualified legal counsel.
+- NOT suitable for jurisdiction-specific analysis. The model was trained on a general
+  commercial contract dataset (CUAD) and has no jurisdiction-specific knowledge of
+  local laws (e.g., Indian Contract Act, GDPR, etc.).
+- NOT designed for full-document input. The model expects individual pre-extracted
+  clauses, not entire contract documents.
+- NOT for high-stakes automated decisions. All outputs should be reviewed by a human
+  legal professional before acting on them.
+
+---
+
+## Bias, Risks, and Limitations
+
+- **Training data bias:** The model was trained on the CUAD dataset, which primarily
+  contains US commercial contracts in English. It may underperform on non-US contract
+  styles, non-English contracts, or non-commercial agreement types.
+- **Label hallucination:** As a generative LLM, the model may occasionally output
+  category names that are not in the predefined taxonomy, especially for ambiguous
+  clauses. The LawUP pipeline mitigates this via a downstream grounding retrieval step
+  that performs exact label matching.
+- **Quantization degradation:** The Q8_0 GGUF quantization introduces minor precision
+  loss compared to the full float16 merged model. This is considered acceptable for
+  this use case.
+- **Small model limitations:** At 3B parameters, the model may miss subtle or complex
+  multi-risk clauses that a larger model might catch.
+- **F1 ceiling:** The model achieved a Micro F1 of 0.7294 on the held-out test set.
+  Roughly 27% of clause-label pairs will be incorrect and require human review.
+
+### Recommendations
+
+Users (both direct and downstream) should:
+- Always treat model outputs as a first-pass triage signal, not a final classification.
+- Have a qualified legal professional review all flagged clauses before taking action.
+- Be aware that the model was not trained on their specific jurisdiction's contract norms.
+- Validate that the model's output labels map correctly to their internal risk taxonomy
+  before integrating into any automated workflow.
+
+---
+
+## How to Get Started with the Model
+
+### Option A: LM Studio (Recommended for Local Use)
+
+1. Open LM Studio and search for: HeavenlyDem0n/lawup-classifier-smollm3-3b
+2. Download: lawup-classifier-smollm3-q8_0.gguf
+3. Load the model in the Local Inference Server tab.
+4. Send requests to http://localhost:1234/v1/chat/completions
+
+### Option B: Python via OpenAI-compatible API
+
+    from openai import OpenAI
+
+    client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+
+    clause = """The Receiving Party shall indemnify and hold harmless the Disclosing
+    Party against any consequential damages arising from a breach."""
+
+    response = client.chat.completions.create(
+        model="lawup-classifier-smollm3-q8_0.gguf",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a legal risk classification expert."
+            },
+            {
+                "role": "user",
+                "content": (
+                    "Identify all applicable risk categories for the following "
+                    "contract clause. Return ONLY a JSON array of risk category "
+                    "strings. Valid categories include: Termination Risk, "
+                    "Indemnification Risk, Liability Risk, IP Risk, Confidentiality "
+                    "Risk, Governing Law Risk, Payment Risk, Audit Risk, "
+                    "Force Majeure Risk, Non-Compete Risk, Data Privacy Risk, "
+                    "Assignment Risk, Change of Control Risk.\n\n"
+                    f'ORIGINAL CLAUSE:\n"""\n{clause}\n"""'
+                )
+            }
+        ],
+        temperature=0.1,
+        max_tokens=256
+    )
+
+    print(response.choices[0].message.content)
+    # Expected output: ["Indemnification Risk", "Liability Risk"]
+
+---
+
+## Training Details
+
+### Training Data
+
+- **Primary dataset:** CUAD (Contract Understanding Atticus Dataset)
+  - A publicly available dataset of 510 commercial contracts with 41 expert-annotated
+    legal clause categories.
+  - Source: https://huggingface.co/datasets/cuad
+- **Data splits used:**
+  - Training set:   ~3,400 clause-label instruction pairs (converted to chat format)
+  - Validation set: ~430 clause-label instruction pairs
+  - Test set:       ~430 clause-label instruction pairs (held-out, test_cls.jsonl)
+- **Data format:** Each training example is a two-turn chat (system + user prompt)
+  followed by an assistant response containing a JSON list of applicable risk labels.
+- **Preprocessing:**
+  - Clauses with no applicable labels were retained as negative examples (empty list []).
+  - Clause text was truncated to a maximum sequence length of 1024 tokens.
+
+### Training Procedure
+
+#### Training Hyperparameters
+
+- **Training regime:** QLoRA (Quantized Low-Rank Adaptation) -- float16 mixed precision
+- **Base model:** HuggingFaceTB/SmolLM3-3B
+- **LoRA rank (r):** 16
+- **LoRA alpha:** 32
+- **LoRA dropout:** 0.05
+- **LoRA target modules:** q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj
+- **Quantization:** 4-bit NF4 (bitsandbytes) during training
+- **Learning rate:** 2e-4 with cosine decay scheduler
+- **Optimizer:** paged_adamw_8bit
+- **Batch size:** 4 per device with gradient accumulation steps of 4 (effective: 16)
+- **Max sequence length:** 1024 tokens
+- **Epochs:** 3
+- **Total training steps:** 428 (final checkpoint)
+- **Warmup ratio:** 0.03
+- **Weight decay:** 0.001
+- **Training framework:** HuggingFace TRL (SFTTrainer) with PEFT
+
+#### Speeds, Sizes, Times
+
+- **Training hardware:** NVIDIA Tesla T4 (16 GB VRAM) on Google Colab
+- **Training duration:** Approximately 45-60 minutes
+- **Adapter size (LoRA weights only):** ~121 MB (adapter_model.safetensors)
+- **Merged model size (float16):** ~6.1 GB
+- **GGUF size (Q8_0 quantized):** ~3.3 GB
+
+---
+
+## Evaluation
+
+### Testing Data, Factors & Metrics
+
+#### Testing Data
+
+The model was evaluated on a held-out test set of ~430 clause-label pairs from the
+CUAD dataset. This test set was never seen during training or validation and represents
+a realistic distribution of commercial contract clauses with their ground-truth risk
+labels.
+
+#### Factors
+
+- Single-label vs. multi-label clauses (many clauses carry 2-3 simultaneous risk
+  categories simultaneously).
+- Short clauses (1-2 sentences) vs. long complex clauses (paragraph length).
+- Common categories (e.g., Termination Risk) vs. rare categories (e.g., Force Majeure).
+
+#### Metrics
+
+- **Micro F1 Score:** Computed globally across all clause-label pairs, treating each
+  pair as an independent binary classification decision.
+- **Precision (Micro):** Of all labels the model predicted, what fraction were correct.
+- **Recall (Micro):** Of all ground-truth labels, what fraction did the model find.
+
+### Results
+
+| Metric             | Score  |
+|--------------------|--------|
+| Micro F1 Score     | 0.7294 |
+| Micro Precision    | 0.6889 |
+| Micro Recall       | 0.7750 |
+
+#### Summary
+
+The model achieves a Micro F1 of 0.7294 on the held-out CUAD test set. Recall (0.7750)
+is higher than Precision (0.6889), meaning the model is slightly biased toward predicting
+more labels than necessary rather than missing labels. For a legal risk triage use case,
+this is the preferred direction: it is better to flag a clause for human review
+unnecessarily than to miss a genuine risk entirely.
+
+---
+
+## Model Examination
+
+The model was qualitatively tested on novel clauses not present in the CUAD dataset:
+- On clear, single-risk clauses (e.g., a plain indemnification clause), the model
+  reliably outputs the correct single label.
+- On ambiguous multi-risk clauses, the model occasionally misses one of two applicable
+  labels but rarely invents completely wrong categories.
+- Without the LoRA adapter (using the raw SmolLM3-3B base model), the model produces
+  hallucinated or conversational responses instead of structured JSON lists.
+
+---
+
+## Environmental Impact
+
+
+
+- **Hardware Type:** NVIDIA Tesla T4 GPU (Google Colab)
+- **Hours used:** ~1 hour of GPU compute
+- **Cloud Provider:** Google (Google Colab)
+- **Compute Region:** US (Google Colab default region)
+- **Carbon Emitted:** Estimated < 0.05 kg CO2e
+
+---
+
+## Technical Specifications
+
+### Model Architecture and Objective
+
+- **Architecture:** SmolLM3ForCausalLM (Transformer decoder, LLaMA-style)
+  - Hidden size:       2048
+  - Feed-forward size: 11008
+  - Layers:            36
+  - Attention heads:   16
+  - KV heads:          4 (Grouped Query Attention)
+  - Context length:    65,536 tokens
+  - RoPE theta:        5,000,000
+- **Training objective:** Causal language modelling (next-token prediction) on
+  instruction-following data, supervised fine-tuning (SFT) style.
+- **Fine-tuning method:** QLoRA -- base model frozen in 4-bit NF4 during training;
+  only LoRA adapter matrices are trainable.
+
+### Compute Infrastructure
+
+Google Colab (standard GPU runtime)
+
+### Hardware
+
+- Training:  NVIDIA Tesla T4 GPU, 16 GB VRAM
+- Inference: NVIDIA RTX 3060 Laptop GPU, 6 GB VRAM (local inference target)
+
+### Software
+
+- Python 3.11 / 3.13
+- PyTorch >= 2.1.0
+- HuggingFace Transformers >= 4.53.0
+- HuggingFace PEFT 0.20.0
+- HuggingFace TRL >= 1.0.0 (SFTTrainer)
+- bitsandbytes >= 0.43.0
+- llama.cpp / convert_hf_to_gguf.py (GGUF conversion)
+- LM Studio (local inference server)
+
+---
+
+## Citation
+
+### BibTeX
+
+    @article{hendrycks2021cuad,
+      title   = {CUAD: An Expert-Annotated NLP Dataset for Legal Contract Review},
+      author  = {Dan Hendrycks and Collin Burns and Anya Chen and Spencer Ball},
+      journal = {arXiv preprint arXiv:2103.06268},
+      year    = {2021}
+    }
+
+### APA
+
+Hendrycks, D., Burns, C., Chen, A., & Ball, S. (2021). CUAD: An Expert-Annotated NLP
+Dataset for Legal Contract Review. arXiv preprint arXiv:2103.06268.
+
+---
+
+## Glossary
+
+- **QLoRA:** Quantized Low-Rank Adaptation. A parameter-efficient fine-tuning method
+  that quantizes the base model weights to 4-bit precision and trains small low-rank
+  adapter matrices on top.
+- **GGUF:** A binary file format used by llama.cpp and compatible runtimes for
+  efficient local LLM inference.
+- **Q8_0:** An 8-bit quantization scheme applied during GGUF conversion, offering a
+  good balance between model size (~3.3 GB) and output quality.
+- **CUAD:** Contract Understanding Atticus Dataset. A benchmark dataset of 510
+  commercial contracts annotated by legal experts for 41 clause types.
+- **Micro F1:** The F1 score computed globally across all clause-label pairs.
+- **Multi-label classification:** A task where each input can belong to zero, one, or
+  multiple output categories simultaneously.
+
+---
+
+## More Information
+
+- LawUP project: https://github.com/Harshitmishra001/LawUP
+- HuggingFace model: https://huggingface.co/HeavenlyDem0n/lawup-classifier-smollm3-3b
+- Base model: https://huggingface.co/HuggingFaceTB/SmolLM3-3B
+- Training dataset: https://huggingface.co/datasets/cuad
+
+---
+
+## Model Card Authors
+
+Harshit Mishra (HeavenlyDem0n)
+
+## Model Card Contact
+
+https://huggingface.co/HeavenlyDem0n
+
+---
+
+## Framework Versions
+
+- PEFT: 0.20.0
+- Transformers: >= 4.53.0 (required for SmolLM3 architecture support)
+- TRL: >= 1.0.0
+- bitsandbytes: >= 0.43.0
+- PyTorch: >= 2.1.0
+
+

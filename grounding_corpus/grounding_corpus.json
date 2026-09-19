@@ -1,0 +1,72 @@
+[
+  {
+    "risk_category": "Non-Compete / Exclusivity Overreach",
+    "sub_category": "Non-Compete",
+    "reference_text": "Industry Standard: Non-compete clauses are increasingly disfavored or heavily restricted in many jurisdictions (e.g., California completely bans them for employees and independent contractors). Even where permitted, courts typically require them to be strictly limited in duration (e.g., under 1 year) and geographic scope to protect a legitimate business interest.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Non-Compete / Exclusivity Overreach",
+    "sub_category": "No-Solicit Of Customers",
+    "reference_text": "Industry Standard: Non-solicitation clauses are generally enforceable if reasonably limited in time (typically 12-24 months) and restricted to customers the contractor or employee actually interacted with. Blanket bans on soliciting any past or future client of the company are often deemed unenforceable.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "IP Ownership Risk",
+    "sub_category": "Ip Ownership Assignment",
+    "reference_text": "Industry Standard: Independent contractors legally retain ownership of their intellectual property unless there is an explicit, written 'work for hire' or IP assignment agreement. Broadly assigning 'all prior inventions' or completely unrelated side projects to a client is considered an overreaching restriction on the contractor's future livelihood.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "IP Ownership Risk",
+    "sub_category": "Unlimited/All-You-Can-Eat-License",
+    "reference_text": "Industry Standard: Freelancers typically grant a limited, non-exclusive license to clients for the specific deliverables paid for. Granting a perpetual, irrevocable, worldwide, royalty-free license to a creator's entire portfolio or background technology without additional compensation is highly non-standard and risky.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Liability Exposure",
+    "sub_category": "Uncapped Liability",
+    "reference_text": "Industry Standard: In commercial service agreements, a party's total aggregate liability is typically capped at the total fees paid under the contract (or a multiple thereof). Uncapped liability (especially for indirect or consequential damages) places existential financial risk on the contractor.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Liability Exposure",
+    "sub_category": "Liquidated Damages",
+    "reference_text": "Industry Standard: Liquidated damages clauses must represent a reasonable pre-estimate of actual anticipated losses. If a court determines the specified amount is designed primarily to punish the breaching party rather than compensate the injured party, it will be struck down as an unenforceable penalty.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Termination Risk",
+    "sub_category": "Termination For Convenience",
+    "reference_text": "Industry Standard: Agreements should ideally allow either party to terminate for convenience with reasonable advance notice (e.g., 30 days). If a client can terminate immediately without cause but the contractor cannot, or if termination forfeits payment for work already performed, the clause is heavily asymmetric.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Dispute / Governing Law",
+    "sub_category": "Governing Law",
+    "reference_text": "Industry Standard: Governing law typically defaults to the jurisdiction where the services are performed or where the defending party is located. Forcing a freelancer to litigate in a distant state or foreign country under unfamiliar laws is a significant procedural disadvantage and cost barrier.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Auto-Renewal Trap",
+    "sub_category": "Renewal Term",
+    "reference_text": "Industry Standard: Contracts should clearly state if they auto-renew. So-called 'evergreen' clauses that automatically lock a party into another long-term commitment unless they provide notice far in advance (e.g., 90 days before expiration) can inadvertently trap service providers.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Commercial Commitment Constraints",
+    "sub_category": "Minimum Commitment",
+    "reference_text": "Industry Standard: Minimum volume commitments or rigid output quotas shift market risk entirely onto the provider. Unless accompanied by a guaranteed minimum payment (a 'take-or-pay' structure), these constraints force the provider to maintain capacity without a reciprocal financial guarantee.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  }
+]

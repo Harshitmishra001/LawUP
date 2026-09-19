@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          # Install dependencies from existing requirement files and also test tools
+          pip install -r backend/requirements.txt -r data/scripts/requirements.txt --break-system-packages
+          pip install pytest ruff sentence-transformers --break-system-packages
+
+      - name: Lint with ruff
+        run: |
+          ruff check .
+
+      - name: Run data quality tests
+        run: |
+          pytest data/scripts/tests/test_data_quality.py -v
+
+      - name: Validate corpus schema
+        run: |
+          python scripts/validate_corpus_schema.py
+
+      - name: Run backend retrieval tests
+        run: |
+          pytest backend/tests/test_retrieval.py -v

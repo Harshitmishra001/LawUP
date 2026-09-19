@@ -1,0 +1,52 @@
+[
+  {
+    "query_clause": "During the term of this Agreement and for 2 years thereafter, Contractor shall not directly or indirectly engage in any business that competes with Client.",
+    "risk_category": "Non-Compete / Exclusivity Overreach",
+    "expected_sub_category": "Non-Compete"
+  },
+  {
+    "query_clause": "Contractor agrees not to solicit, hire, or contact any current or past customer of Client for any reason.",
+    "risk_category": "Non-Compete / Exclusivity Overreach",
+    "expected_sub_category": "No-Solicit Of Customers"
+  },
+  {
+    "query_clause": "Client shall exclusively own all rights, title, and interest in any intellectual property developed by Contractor prior to this Agreement.",
+    "risk_category": "IP Ownership Risk",
+    "expected_sub_category": "Ip Ownership Assignment"
+  },
+  {
+    "query_clause": "Contractor grants Client a perpetual, irrevocable, worldwide, royalty-free license to use Contractor's entire portfolio of background technology.",
+    "risk_category": "IP Ownership Risk",
+    "expected_sub_category": "Unlimited/All-You-Can-Eat-License"
+  },
+  {
+    "query_clause": "In no event shall Client's liability exceed the total fees paid under this Agreement, whereas Contractor's liability shall be uncapped.",
+    "risk_category": "Liability Exposure",
+    "expected_sub_category": "Uncapped Liability"
+  },
+  {
+    "query_clause": "If Contractor breaches any provision, they shall immediately pay Client $10,000,000 as liquidated damages.",
+    "risk_category": "Liability Exposure",
+    "expected_sub_category": "Liquidated Damages"
+  },
+  {
+    "query_clause": "Client may terminate this Agreement immediately at any time without cause. Contractor may only terminate upon 90 days written notice.",
+    "risk_category": "Termination Risk",
+    "expected_sub_category": "Termination For Convenience"
+  },
+  {
+    "query_clause": "Any disputes arising under this contract must be litigated exclusively in the state courts of Alaska.",
+    "risk_category": "Dispute / Governing Law",
+    "expected_sub_category": "Governing Law"
+  },
+  {
+    "query_clause": "This Agreement shall automatically renew for successive 5-year terms unless Contractor provides written notice of cancellation 180 days prior.",
+    "risk_category": "Auto-Renewal Trap",
+    "expected_sub_category": "Renewal Term"
+  },
+  {
+    "query_clause": "Contractor must guarantee a minimum output of 500 units per month, regardless of Client's actual orders.",
+    "risk_category": "Commercial Commitment Constraints",
+    "expected_sub_category": "Minimum Commitment"
+  }
+]

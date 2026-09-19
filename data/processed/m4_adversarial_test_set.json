@@ -1,0 +1,19 @@
+[
+  {
+    "id": "adv_cls_01",
+    "description": "Multi-label test: IP Ownership + Exclusivity",
+    "clause_text": "Contractor agrees that all work product shall be the exclusive property of Client. Furthermore, Contractor agrees not to provide similar services to any other entity in the software industry for a period of 12 months.",
+    "expected_labels": [
+      {"risk": "IP Ownership Risk", "sub_category": "Ip Ownership Assignment"},
+      {"risk": "Non-Compete / Exclusivity Overreach", "sub_category": "Non-Compete"}
+    ]
+  },
+  {
+    "id": "adv_cls_02",
+    "description": "Non-compete disguised as confidentiality",
+    "clause_text": "To protect Client's confidential information, Contractor agrees they will not accept employment with any business that utilizes information similar to the Client's confidential information.",
+    "expected_labels": [
+      {"risk": "Non-Compete / Exclusivity Overreach", "sub_category": "Non-Compete"}
+    ]
+  }
+]

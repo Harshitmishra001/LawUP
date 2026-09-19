@@ -45,6 +45,13 @@ Phase 1 targets two common, high-impact contract types:
 
 ---
 
+## Released Models
+
+The fine-tuned LoRA adapter for the Simplification Agent is publicly available on Hugging Face:
+- [lawup-simplifier-smollm3-3b](https://huggingface.co/HeavenlyDem0n/lawup-simplifier-smollm3-3b) (Q8 GGUF / LoRA Adapter)
+
+---
+
 ## Tech Stack
 
 | Component | Technology |

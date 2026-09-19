@@ -1,0 +1,2 @@
+FROM "C:\Users\hmhar\.lmstudio\models\ggml-org\SmolLM3-3B-GGUF\SmolLM3-Q8_0.gguf"
+ADAPTER "C:\Users\hmhar\Projects\LawUP\LawUP-lora.gguf"

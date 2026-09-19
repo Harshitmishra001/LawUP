@@ -1,6 +1,6 @@
-# LawUP
+﻿# LawUP
 
-![Status: Phase 1 — In Development](https://img.shields.io/badge/status-Phase%201%20·%20In%20Development-yellow)
+![Status: Milestone 5 (Frontend) In Development](https://img.shields.io/badge/status-Milestone%205%20%7C%20Frontend%20Development-blue)
 
 ---
 
@@ -14,41 +14,29 @@ LawUP is an agentic AI system that analyzes contracts clause-by-clause, producin
 
 LawUP processes contracts through a deterministic, multi-agent pipeline:
 
-```
-Ingestion → Simplification → Classification → Grounding → Verification → Report
-```
+Ingestion ➝ Simplification ➝ Classification ➝ Grounding ➝ Verification ➝ Report
 
-| Stage | Agent | Purpose |
-|-------|-------|---------|
-| 1 | **Ingestion** | Parse uploaded PDF/DOCX, extract clause-level text units |
-| 2 | **Simplification** | Generate plain-language rewrites via LoRA-adapted SmolLM3 |
-| 3 | **Classification** | Multi-label clause risk classification via LoRA-adapted SmolLM3 |
-| 4 | **Grounding** | Retrieve supporting statute/standard-clause text for flagged clauses |
-| 5a | **Meaning Verification** | NLI-style entailment check — rewrite preserves original obligations |
-| 5b | **Citation Verification** | Check that retrieved source actually supports the risk claim |
-| 6 | **Report** | Assemble structured output with verification badges |
+| Stage | Agent | Purpose | Status |
+|-------|-------|---------|--------|
+| 1 | **Ingestion** | Parse uploaded PDF/DOCX, extract clause-level text units | ✅ Complete |
+| 2 | **Simplification** | Generate plain-language rewrites via LoRA-adapted SmolLM3 | ✅ Complete |
+| 3 | **Classification** | Multi-label clause risk classification via LoRA-adapted SmolLM3 | ✅ Complete |
+| 4 | **Grounding** | Retrieve supporting statute/standard-clause text for flagged clauses | ✅ Complete |
+| 5a | **Meaning Verification** | NLI-style entailment check — rewrite preserves original obligations | ✅ Complete |
+| 5b | **Citation Verification** | Check that retrieved source actually supports the risk claim | ⏳ Pending |
+| 6 | **Report / Frontend** | Assemble structured output with verification badges in React UI | ⏳ In Progress |
 
 Both verification gates **fail closed**: if a check cannot confirm correctness, the output is flagged, not silently passed.
 
 ---
 
-## Phase 1 Scope
-
-Phase 1 targets two common, high-impact contract types:
-
-- **Freelance / service contracts**
-- **Employment offer letters**
-
-### Phase 1 Coverage Gaps
-
-> The Phase 1 classifier does not cover **Confidentiality Scope** or **Indemnification** — CUAD has no annotated categories for either. These are the first candidates for augmentation in Phase 2.
-
----
-
 ## Released Models
 
-The fine-tuned LoRA adapter for the Simplification Agent is publicly available on Hugging Face:
-- [lawup-simplifier-smollm3-3b](https://huggingface.co/HeavenlyDem0n/lawup-simplifier-smollm3-3b) (Q8 GGUF / LoRA Adapter)
+Our fine-tuned LoRA models and GGUF exports are publicly available on Hugging Face:
+- **[lawup-simplifier-smollm3-3b](https://huggingface.co/HeavenlyDem0n/lawup-simplifier-smollm3-3b)**: Simplifies dense legalese into plain English.
+- **[lawup-classifier-smollm3-3b](https://huggingface.co/HeavenlyDem0n/lawup-classifier-smollm3-3b)**: Multi-label classifier that detects contract risks (e.g., Indemnification, Termination).
+
+These models are exported as **Q8_0 GGUF** files and are designed to be run locally and entirely offline via llama.cpp or LM Studio.
 
 ---
 
@@ -57,10 +45,20 @@ The fine-tuned LoRA adapter for the Simplification Agent is publicly available o
 | Component | Technology |
 |-----------|------------|
 | Base model | SmolLM3-3B (QLoRA fine-tuned) |
-| Backend | FastAPI (Python) |
-| Frontend | Next.js |
+| Backend | FastAPI (Python) with Orchestrator pattern |
+| Inference | LM Studio (llama.cpp) for secure offline API hosting |
+| Frontend | Next.js (React) |
 | Training | QLoRA via PEFT + bitsandbytes, targeting Colab T4 |
-| Grounding | Sentence-Transformers for retrieval over statute corpus |
+| Grounding | Sentence-Transformers for semantic retrieval over JSON statute corpus |
+
+---
+
+## Current Status
+
+**The AI and Backend architecture is 100% complete!** 
+The /analyze endpoint in FastAPI successfully chains together the Simplification model, the Classification model, the Sentence-Transformers Semantic Retriever, and the NLI Verifier into a single cohesive response. 
+
+**Next Steps:** Building the Next.js React frontend to visualize these risk badges and verified citations.
 
 ---
 

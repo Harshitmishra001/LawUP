@@ -2,74 +2,46 @@ import os
 import sys
 import time
 
-# Add root to sys.path so we can import shared
+# Add project root to sys.path so shared/ and backend/ are importable
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from openai import AsyncOpenAI
-import httpx
 from transformers import AutoTokenizer
+
 from shared.prompt_utils import format_prompt
+from backend.app.agents.orchestrator import Orchestrator
 
-app = FastAPI(title="LawUP Simplifier API (LMStudio Backend)")
+app = FastAPI(
+    title="LawUP API",
+    description="Clause-by-clause legal risk analysis pipeline backed by fine-tuned SmolLM3 models.",
+    version="0.4.0",
+)
 
-# Initialize OpenAI client pointed at LMStudio's local server or env var
+# LM Studio URL — configure via environment variable
 lm_studio_url = os.environ.get("LM_STUDIO_URL", "http://localhost:1234/v1")
-client = AsyncOpenAI(base_url=lm_studio_url, api_key="lm-studio")
 
-# Load only the tokenizer to compute true token counts for validation
-# This is lightweight and doesn't require downloading/loading model weights
+# Initialise the orchestrator once at startup (loads Sentence-Transformers model etc.)
+print("Initialising LawUP pipeline orchestrator...")
+orchestrator = Orchestrator(lm_studio_url=lm_studio_url)
+
+# Load tokenizer for input validation on /simplify
 print("Loading tokenizer for input validation...")
 tokenizer = AutoTokenizer.from_pretrained("HuggingFaceTB/SmolLM3-3B")
+print("Ready.")
 
-class SimplifyRequest(BaseModel):
+
+# ---------------------------------------------------------------------------
+# Request / Response Models
+# ---------------------------------------------------------------------------
+
+class ClauseRequest(BaseModel):
     clause: str
+
 
 class SimplifyResponse(BaseModel):
     rewrite: str
     latency_ms: float
-
-@app.post("/simplify", response_model=SimplifyResponse)
-async def simplify_clause(request: SimplifyRequest):
-    start_time = time.time()
-    
-    if not request.clause or not request.clause.strip():
-        raise HTTPException(status_code=400, detail="Input clause cannot be empty.")
-        
-    prompt = format_prompt(request.clause)
-    
-    # EXACT 1024 Token validation on the FORMATTED prompt using the real tokenizer
-    tokens = tokenizer.encode(prompt, add_special_tokens=False)
-    num_tokens = len(tokens)
-    
-    if num_tokens > 1024:
-        raise HTTPException(
-            status_code=400, 
-            detail=f"Formatted prompt exceeds maximum length of 1024 tokens (got {num_tokens})."
-        )
-        
-    try:
-        # Deterministic greedy decoding via LMStudio
-        response = await client.completions.create(
-            model="lawup-3b-q8", # Name doesn't strictly matter for LMStudio, but good practice
-            prompt=prompt,
-            max_tokens=512,
-            temperature=0.0,
-            stop=["<|endoftext|>"] # Explicitly stop on the training EOS token to prevent run-on generation
-        )
-    except httpx.ConnectError:
-        raise HTTPException(status_code=503, detail=f"LM Studio not reachable at {lm_studio_url}. Is the local server running?")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to communicate with LMStudio: {str(e)}")
-        
-    rewrite = response.choices[0].text.strip()
-    latency_ms = (time.time() - start_time) * 1000
-    
-    return SimplifyResponse(
-        rewrite=rewrite,
-        latency_ms=latency_ms
-    )
 
 
 class AnalyzeResponse(BaseModel):
@@ -79,76 +51,81 @@ class AnalyzeResponse(BaseModel):
     grounding_references: list
     verifier_report: dict
     total_latency_ms: float
+    stage_latencies_ms: dict
 
-@app.post("/analyze", response_model=AnalyzeResponse)
-async def analyze_clause(request: SimplifyRequest):
+
+# ---------------------------------------------------------------------------
+# Endpoints
+# ---------------------------------------------------------------------------
+
+@app.get("/health")
+def health_check():
+    """Simple liveness probe."""
+    return {"status": "ok", "lm_studio_url": lm_studio_url}
+
+
+@app.post("/simplify", response_model=SimplifyResponse)
+async def simplify_clause(request: ClauseRequest):
     """
-    End-to-end LawUP Orchestrator Pipeline:
-    1. Clause Extraction -> (Passed in request)
-    2. Simplifier LoRA -> (AsyncOpenAI call to LM Studio)
-    3. Classifier LoRA -> (ClassificationAgent)
-    4. Grounding Retrieval -> (GroundingRetriever)
-    5. NLI Meaning Verifier -> (verify_meaning)
+    Stage 2 only — simplify a single clause into plain English.
+
+    Validates that the formatted prompt stays within 1024 tokens before
+    forwarding to the LoRA-adapted SmolLM3 model via LM Studio.
     """
     start_time = time.time()
-    clause = request.clause.strip()
 
+    if not request.clause or not request.clause.strip():
+        raise HTTPException(status_code=400, detail="Input clause cannot be empty.")
+
+    prompt = format_prompt(request.clause)
+
+    # Exact token validation on the formatted prompt
+    tokens = tokenizer.encode(prompt, add_special_tokens=False)
+    if len(tokens) > 1024:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Formatted prompt exceeds 1024 tokens (got {len(tokens)}).",
+        )
+
+    try:
+        rewrite = await orchestrator.simplifier.run_async(request.clause.strip())
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Simplifier unavailable: {str(e)}")
+
+    return SimplifyResponse(
+        rewrite=rewrite,
+        latency_ms=(time.time() - start_time) * 1000,
+    )
+
+
+@app.post("/analyze", response_model=AnalyzeResponse)
+async def analyze_clause(request: ClauseRequest):
+    """
+    End-to-end LawUP pipeline — runs all four stages for a single clause:
+
+        Stage 2: SimplifierAgent   — plain-English rewrite via LoRA SmolLM3
+        Stage 3: ClassificationAgent — multi-label risk detection via LoRA SmolLM3
+        Stage 4: GroundingAgent    — semantic retrieval from statute corpus
+        Stage 5a: MeaningVerifier  — LLM-based bi-directional entailment check
+
+    All stages are fail-closed: a stage failure returns a safe empty/error value
+    rather than crashing the whole request.
+    """
+    clause = request.clause.strip()
     if not clause:
         raise HTTPException(status_code=400, detail="Input clause cannot be empty.")
 
-    # We import agents here to avoid blocking startup if dependencies are missing
-    from backend.app.agents.classifier import ClassificationAgent
-    from backend.app.retrieval import GroundingRetriever
-    from backend.app.agents.verifier_meaning import verify_meaning
-
-    # --- Step 2: Simplification ---
-    prompt = format_prompt(clause)
     try:
-        response = await client.completions.create(
-            model="lawup-3b-q8",
-            prompt=prompt,
-            max_tokens=512,
-            temperature=0.0,
-            stop=["<|endoftext|>"]
-        )
-        rewrite = response.choices[0].text.strip()
+        result = await orchestrator.run(clause)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Simplifier failed: {str(e)}")
-
-    # --- Step 3: Classification ---
-    try:
-        classifier = ClassificationAgent(lm_studio_url=lm_studio_url)
-        risks = classifier.run(clause)
-    except Exception as e:
-        print(f"Classifier error: {e}")
-        risks = []
-
-    # --- Step 4: Grounding Retrieval ---
-    grounding_refs = []
-    try:
-        retriever = GroundingRetriever(corpus_path="grounding_corpus/grounding_corpus.json")
-        for risk in risks:
-            cat = risk.get("risk")
-            if cat:
-                refs = retriever.retrieve_grounding(risk_category=cat, clause_text=clause, top_k=1)
-                grounding_refs.extend(refs)
-    except Exception as e:
-        print(f"Retrieval error: {e}")
-
-    # --- Step 5: Meaning Verifier ---
-    try:
-        verifier_report = verify_meaning(original=clause, rewrite=rewrite, model="lawup-verifier")
-    except Exception as e:
-        print(f"Verifier error: {e}")
-        verifier_report = {"error": str(e)}
-
-    latency = (time.time() - start_time) * 1000
+        raise HTTPException(status_code=500, detail=f"Pipeline failed: {str(e)}")
 
     return AnalyzeResponse(
-        original_clause=clause,
-        simplified_rewrite=rewrite,
-        risks_identified=risks,
-        grounding_references=grounding_refs,
-        verifier_report=verifier_report,
-        total_latency_ms=latency
+        original_clause=result.original_clause,
+        simplified_rewrite=result.simplified_rewrite,
+        risks_identified=result.risks_identified,
+        grounding_references=result.grounding_references,
+        verifier_report=result.verifier_report,
+        total_latency_ms=result.total_latency_ms,
+        stage_latencies_ms=result.stage_latencies_ms,
     )

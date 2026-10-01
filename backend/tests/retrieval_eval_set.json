@@ -10,6 +10,11 @@
     "expected_sub_category": "No-Solicit Of Customers"
   },
   {
+    "query_clause": "Contractor shall not recruit or hire any employee or contractor of Client for a period of 3 years following termination.",
+    "risk_category": "Non-Compete / Exclusivity Overreach",
+    "expected_sub_category": "No-Solicit Of Employees"
+  },
+  {
     "query_clause": "Client shall exclusively own all rights, title, and interest in any intellectual property developed by Contractor prior to this Agreement.",
     "risk_category": "IP Ownership Risk",
     "expected_sub_category": "Ip Ownership Assignment"
@@ -18,6 +23,16 @@
     "query_clause": "Contractor grants Client a perpetual, irrevocable, worldwide, royalty-free license to use Contractor's entire portfolio of background technology.",
     "risk_category": "IP Ownership Risk",
     "expected_sub_category": "Unlimited/All-You-Can-Eat-License"
+  },
+  {
+    "query_clause": "Any intellectual property developed by Contractor using their own tools and pre-existing libraries shall be jointly owned by both parties.",
+    "risk_category": "IP Ownership Risk",
+    "expected_sub_category": "Joint Ip Ownership"
+  },
+  {
+    "query_clause": "Contractor's pre-existing code, frameworks, and methodologies are hereby assigned to Client effective upon execution of this agreement.",
+    "risk_category": "IP Ownership Risk",
+    "expected_sub_category": "Background Ip"
   },
   {
     "query_clause": "In no event shall Client's liability exceed the total fees paid under this Agreement, whereas Contractor's liability shall be uncapped.",
@@ -30,14 +45,39 @@
     "expected_sub_category": "Liquidated Damages"
   },
   {
+    "query_clause": "Client shall not be liable for any indirect, special, incidental or consequential damages, but Contractor remains fully liable for all such losses.",
+    "risk_category": "Liability Exposure",
+    "expected_sub_category": "Consequential Damages Waiver"
+  },
+  {
     "query_clause": "Client may terminate this Agreement immediately at any time without cause. Contractor may only terminate upon 90 days written notice.",
     "risk_category": "Termination Risk",
     "expected_sub_category": "Termination For Convenience"
   },
   {
+    "query_clause": "Client may terminate immediately upon any breach by Contractor, with no notice period or opportunity to cure the breach.",
+    "risk_category": "Termination Risk",
+    "expected_sub_category": "Termination For Cause"
+  },
+  {
+    "query_clause": "Upon termination for any reason, all compensation earned by Contractor but not yet paid shall be forfeited.",
+    "risk_category": "Termination Risk",
+    "expected_sub_category": "Effect Of Termination"
+  },
+  {
     "query_clause": "Any disputes arising under this contract must be litigated exclusively in the state courts of Alaska.",
     "risk_category": "Dispute / Governing Law",
     "expected_sub_category": "Governing Law"
+  },
+  {
+    "query_clause": "All disputes shall be settled by binding arbitration. Client retains the right to seek injunctive relief in any court but Contractor waives that right.",
+    "risk_category": "Dispute / Governing Law",
+    "expected_sub_category": "Dispute Resolution"
+  },
+  {
+    "query_clause": "The prevailing party in any legal action shall be entitled to recover all attorneys' fees and legal costs from the non-prevailing party.",
+    "risk_category": "Dispute / Governing Law",
+    "expected_sub_category": "Legal Fees Allocation"
   },
   {
     "query_clause": "This Agreement shall automatically renew for successive 5-year terms unless Contractor provides written notice of cancellation 180 days prior.",
@@ -48,5 +88,45 @@
     "query_clause": "Contractor must guarantee a minimum output of 500 units per month, regardless of Client's actual orders.",
     "risk_category": "Commercial Commitment Constraints",
     "expected_sub_category": "Minimum Commitment"
+  },
+  {
+    "query_clause": "Invoices not paid within 120 days will be subject to no penalties and Client may defer payment indefinitely.",
+    "risk_category": "Payment Terms Risk",
+    "expected_sub_category": "Late Payment"
+  },
+  {
+    "query_clause": "Client may set off any amount it believes Contractor owes against any outstanding invoices, without prior notice or approval.",
+    "risk_category": "Payment Terms Risk",
+    "expected_sub_category": "Payment Adjustments"
+  },
+  {
+    "query_clause": "Contractor must maintain strict confidentiality of all information received from Client in perpetuity, even after the agreement ends.",
+    "risk_category": "Confidentiality Risk",
+    "expected_sub_category": "Confidentiality"
+  },
+  {
+    "query_clause": "Contractor agrees that any information shared during the engagement, regardless of how it was marked or communicated, is a trade secret of Client.",
+    "risk_category": "Confidentiality Risk",
+    "expected_sub_category": "Trade Secrets"
+  },
+  {
+    "query_clause": "The Receiving Party shall indemnify and hold harmless the Disclosing Party against any and all damages, losses, and expenses arising from any breach.",
+    "risk_category": "Indemnification Risk",
+    "expected_sub_category": "Indemnification"
+  },
+  {
+    "query_clause": "Contractor shall indemnify Client against any third-party IP infringement claims, even where Client has modified the deliverables after acceptance.",
+    "risk_category": "Indemnification Risk",
+    "expected_sub_category": "Third Party Claims Indemnification"
+  },
+  {
+    "query_clause": "In the event of a pandemic, natural disaster, or government action preventing performance, either party may suspend obligations without liability.",
+    "risk_category": "Force Majeure / Change",
+    "expected_sub_category": "Force Majeure"
+  },
+  {
+    "query_clause": "Contractor warrants that all deliverables are original and do not infringe any third-party patent, copyright, trademark, or trade secret rights.",
+    "risk_category": "Warranty / Representation Risk",
+    "expected_sub_category": "Ip Warranty"
   }
 ]

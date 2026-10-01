@@ -14,6 +14,20 @@
     "scope": "general"
   },
   {
+    "risk_category": "Non-Compete / Exclusivity Overreach",
+    "sub_category": "No-Solicit Of Employees",
+    "reference_text": "Industry Standard: No-hire or no-solicit-of-employees clauses are subject to increasing scrutiny. Many courts apply a reasonableness standard requiring temporal limits (6-18 months) and a legitimate business rationale. A blanket, indefinite prohibition on hiring any person who was ever employed by the other party is typically overbroad and unenforceable.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Non-Compete / Exclusivity Overreach",
+    "sub_category": "Exclusivity",
+    "reference_text": "Industry Standard: True exclusivity obligations (where a contractor or supplier can only serve this one client) are highly non-standard for freelancers and independent contractors. Such a clause effectively converts an independent contractor relationship into a de facto employment relationship, creating significant legal risk for the client (worker misclassification) and severe financial risk for the contractor who is barred from other income.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
     "risk_category": "IP Ownership Risk",
     "sub_category": "Ip Ownership Assignment",
     "reference_text": "Industry Standard: Independent contractors legally retain ownership of their intellectual property unless there is an explicit, written 'work for hire' or IP assignment agreement. Broadly assigning 'all prior inventions' or completely unrelated side projects to a client is considered an overreaching restriction on the contractor's future livelihood.",
@@ -24,6 +38,20 @@
     "risk_category": "IP Ownership Risk",
     "sub_category": "Unlimited/All-You-Can-Eat-License",
     "reference_text": "Industry Standard: Freelancers typically grant a limited, non-exclusive license to clients for the specific deliverables paid for. Granting a perpetual, irrevocable, worldwide, royalty-free license to a creator's entire portfolio or background technology without additional compensation is highly non-standard and risky.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "IP Ownership Risk",
+    "sub_category": "License Grant",
+    "reference_text": "Industry Standard: A license grant should be specific in scope (purpose, territory, exclusivity, duration). Open-ended phrases like 'all uses' or 'in any manner' without defined boundaries are non-standard and could extinguish the creator's ability to use their own work or tools in future projects.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "IP Ownership Risk",
+    "sub_category": "Joint Ip Ownership",
+    "reference_text": "Industry Standard: Joint ownership of intellectual property is complex and often disfavored. Unless a specific agreement governs each party's rights, either joint owner may independently exploit jointly-owned IP without accounting to the other in the US, while many other jurisdictions require consent from all co-owners. This creates significant ambiguity and potential for disputes.",
     "authority_type": "industry_norm",
     "scope": "general"
   },
@@ -42,9 +70,51 @@
     "scope": "general"
   },
   {
+    "risk_category": "Liability Exposure",
+    "sub_category": "Mutual Indemnification",
+    "reference_text": "Industry Standard: Indemnification clauses should ideally be mutual and reciprocal, with each party indemnifying the other for harms arising from their own acts or omissions. A unilateral indemnification clause — where only one party (typically the contractor or vendor) bears all indemnification obligations — is non-standard and places disproportionate financial risk on that party.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Liability Exposure",
+    "sub_category": "Consequential Damages Waiver",
+    "reference_text": "Industry Standard: Most commercial contracts include a mutual waiver of indirect, special, incidental, or consequential damages (e.g., lost profits, lost revenue). A one-sided consequential damages waiver — where only one party is protected — is highly non-standard and creates significant asymmetric risk for the unprotected party.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Liability Exposure",
+    "sub_category": "Broad Indemnification Scope",
+    "reference_text": "Industry Standard: An indemnification clause that covers losses arising from a third party's actions, or losses that the indemnifying party has no reasonable ability to foresee or control, is considered overreaching. Indemnification obligations should be limited to the indemnifying party's own direct acts, omissions, or breaches.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
     "risk_category": "Termination Risk",
     "sub_category": "Termination For Convenience",
     "reference_text": "Industry Standard: Agreements should ideally allow either party to terminate for convenience with reasonable advance notice (e.g., 30 days). If a client can terminate immediately without cause but the contractor cannot, or if termination forfeits payment for work already performed, the clause is heavily asymmetric.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Termination Risk",
+    "sub_category": "Termination For Cause",
+    "reference_text": "Industry Standard: Termination for cause clauses should specify what constitutes a material breach and provide a reasonable cure period (typically 15-30 days) after written notice before termination becomes effective. Termination without a cure period for minor or curable breaches is considered harsh and non-standard.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Termination Risk",
+    "sub_category": "Effect Of Termination",
+    "reference_text": "Industry Standard: Upon termination, a contractor should be entitled to payment for all work satisfactorily completed up to the termination date, including reasonable costs for work-in-progress. Clauses that forfeit earned compensation, require repayment of fees for already-delivered work, or impose additional 'wind-down' costs solely on the terminated party are considered punitive and non-standard.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Termination Risk",
+    "sub_category": "Survival Clause",
+    "reference_text": "Industry Standard: Survival clauses specify which contractual obligations persist after termination (e.g., confidentiality, IP ownership, limitation of liability). Overly broad survival clauses that extend obligations like non-compete or exclusivity indefinitely after termination are problematic and may not be enforceable.",
     "authority_type": "industry_norm",
     "scope": "general"
   },
@@ -56,6 +126,27 @@
     "scope": "general"
   },
   {
+    "risk_category": "Dispute / Governing Law",
+    "sub_category": "Dispute Resolution",
+    "reference_text": "Industry Standard: Mandatory arbitration clauses, while often enforced, can deprive a party of their right to a jury trial and class action participation. One-sided arbitration clauses that require the weaker party to arbitrate while the stronger party can seek injunctive relief in court are viewed as procedurally unconscionable in many jurisdictions.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Dispute / Governing Law",
+    "sub_category": "Jurisdiction",
+    "reference_text": "Industry Standard: Venue selection clauses should ideally be in a location convenient to both parties. A clause requiring a freelancer or small contractor to litigate exclusively in the courts of a far-off jurisdiction effectively denies them access to justice by making the cost of litigation prohibitive.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Dispute / Governing Law",
+    "sub_category": "Legal Fees Allocation",
+    "reference_text": "Industry Standard: The American Rule generally requires each party to bear their own legal fees regardless of outcome. A 'loser pays' or fee-shifting clause that disproportionately exposes one party to the other's legal costs creates a significant chilling effect on the weaker party's ability to enforce their rights.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
     "risk_category": "Auto-Renewal Trap",
     "sub_category": "Renewal Term",
     "reference_text": "Industry Standard: Contracts should clearly state if they auto-renew. So-called 'evergreen' clauses that automatically lock a party into another long-term commitment unless they provide notice far in advance (e.g., 90 days before expiration) can inadvertently trap service providers.",
@@ -63,9 +154,268 @@
     "scope": "general"
   },
   {
+    "risk_category": "Auto-Renewal Trap",
+    "sub_category": "Most Favored Nation",
+    "reference_text": "Industry Standard: Most-favored-nation (MFN) or best-price clauses guarantee one party the same favorable terms offered to any third party. While common in licensing deals, MFN clauses that lock a freelancer or vendor into perpetually matching their lowest price across all clients effectively cap their ability to raise rates and can amount to unlawful price-fixing in some contexts.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
     "risk_category": "Commercial Commitment Constraints",
     "sub_category": "Minimum Commitment",
     "reference_text": "Industry Standard: Minimum volume commitments or rigid output quotas shift market risk entirely onto the provider. Unless accompanied by a guaranteed minimum payment (a 'take-or-pay' structure), these constraints force the provider to maintain capacity without a reciprocal financial guarantee.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Commercial Commitment Constraints",
+    "sub_category": "Volume Restriction",
+    "reference_text": "Industry Standard: Exclusivity arrangements that prohibit a contractor from working with other clients within a certain market segment must be accompanied by a meaningful financial guarantee (retainer or exclusivity fee). Without such compensation, volume restrictions are considered an unreasonable restraint of trade.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Payment Terms Risk",
+    "sub_category": "Late Payment",
+    "reference_text": "Industry Standard: Net-30 or Net-45 payment terms are standard in commercial contracts. Payment terms exceeding 90 days are non-standard and considered exploitative for small businesses and freelancers who depend on predictable cash flow. Many jurisdictions (e.g., EU Late Payment Directive, US Prompt Payment Acts) mandate statutory interest on overdue commercial invoices.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Payment Terms Risk",
+    "sub_category": "Payment Adjustments",
+    "reference_text": "Industry Standard: Any mechanism allowing one party to unilaterally adjust, offset, or withhold payment (e.g., set-off rights) without prior notice or dispute resolution is non-standard. Deductions or chargebacks should be accompanied by a clear itemized written notice and an opportunity to dispute.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Payment Terms Risk",
+    "sub_category": "Expenses",
+    "reference_text": "Industry Standard: Reimbursable expenses should be explicitly defined with pre-approval thresholds. Clauses that require the contractor to absorb all costs incurred in performance without a mechanism for reimbursement, or that require pre-approval for every incidental expense, create unnecessary administrative friction and financial risk.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Payment Terms Risk",
+    "sub_category": "Audit Rights",
+    "reference_text": "Industry Standard: Audit rights granted to one party should be mutual, reasonable in frequency (once per year), limited to relevant financial records, conducted at the auditing party's expense, and subject to a minimum notice period (e.g., 30 days). Open-ended or highly frequent audit rights are commercially intrusive.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Confidentiality Risk",
+    "sub_category": "Confidentiality",
+    "reference_text": "Industry Standard: Confidentiality obligations should be mutual, time-limited (typically 2-5 years after disclosure, or for the term of the agreement plus 2-3 years), and exclude information that is publicly known, independently developed, or received from a third party without restriction. Perpetual, one-sided confidentiality obligations are considered onerous.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Confidentiality Risk",
+    "sub_category": "Trade Secrets",
+    "reference_text": "Industry Standard: Trade secret protections under the Defend Trade Secrets Act (DTSA) and state laws require the owner to take reasonable measures to maintain secrecy. A contract that defines 'confidential information' so broadly as to include publicly available information, general industry knowledge, or skills a contractor brought to the engagement is over-reaching and likely unenforceable.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Confidentiality Risk",
+    "sub_category": "Return Of Confidential Information",
+    "reference_text": "Industry Standard: Upon termination or request, a party should be required to return or destroy confidential information within a reasonable period (e.g., 30 days). Clauses that allow one party to retain the other's confidential information indefinitely after termination without a defined purpose are non-standard.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Indemnification Risk",
+    "sub_category": "Indemnification",
+    "reference_text": "Industry Standard: Indemnification clauses should be clearly scoped to losses arising from the indemnifying party's own breach, negligence, or willful misconduct. Clauses requiring a contractor to indemnify the client for losses arising from the client's own actions, third-party claims, or any consequential damages are considered overreaching.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Indemnification Risk",
+    "sub_category": "Third Party Claims Indemnification",
+    "reference_text": "Industry Standard: A contractor who is required to indemnify a client against third-party IP infringement claims should be given full control over the defense of such claims, including the right to settle. Clauses that require indemnification of third-party claims but deny the indemnifying party control over the defense are commercially unreasonable.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Indemnification Risk",
+    "sub_category": "Insurance",
+    "reference_text": "Industry Standard: Insurance requirements should be proportionate to the size and risk of the contract. Requiring a freelancer or small business to carry commercial general liability insurance with limits of $5 million or more for a low-risk service contract is disproportionate and commercially unreasonable. Reasonable limits for professional services typically range from $1M per occurrence to $2M aggregate.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Force Majeure / Change",
+    "sub_category": "Force Majeure",
+    "reference_text": "Industry Standard: Force majeure clauses should apply symmetrically to both parties and list specific triggering events (pandemics, natural disasters, government actions). A clause that grants force majeure relief to one party but not the other, or that defines force majeure so broadly as to include foreseeable commercial risks (e.g., market downturns, supplier shortages), is considered abusive.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Force Majeure / Change",
+    "sub_category": "Change Of Control",
+    "reference_text": "Industry Standard: Change-of-control provisions should give both parties the right to terminate or renegotiate if the other party is acquired, merged, or changes ownership. A unilateral change-of-control clause that only protects the client's ability to reassign the contract to an acquirer, while denying the contractor a corresponding termination right, is non-standard.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Force Majeure / Change",
+    "sub_category": "Change In Control",
+    "reference_text": "Industry Standard: Anti-assignment clauses should be mutual. If a client can assign the agreement in connection with a business acquisition, the contractor should have a corresponding right to terminate or approve the assignment. A clause that prevents a contractor from assigning their contractual rights to a successor business (e.g., incorporating their freelance practice into an LLC) is unreasonably restrictive.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Force Majeure / Change",
+    "sub_category": "Amendment",
+    "reference_text": "Industry Standard: Contract amendments should require written consent of all parties. Clauses that allow one party to unilaterally modify contract terms — including pricing, scope, or service levels — upon notice (without requiring the other party's acceptance) are highly non-standard and effectively allow one party to change the deal after it has been struck.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Warranty / Representation Risk",
+    "sub_category": "Ip Warranty",
+    "reference_text": "Industry Standard: A contractor warranting that deliverables do not infringe any third-party IP rights should be accompanied by a corresponding indemnification obligation and an IP insurance requirement. Broad IP warranties without knowledge qualifiers (e.g., 'to contractor's best knowledge') expose the contractor to liability for undetectable infringement risks they cannot reasonably guard against.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Warranty / Representation Risk",
+    "sub_category": "Anti-Assignment",
+    "reference_text": "Industry Standard: Most contracts contain anti-assignment clauses preventing either party from assigning their rights or obligations without consent. A one-sided anti-assignment clause that prohibits the contractor from assigning but freely allows the client to assign the contract (including to a competitor of the contractor) is commercially asymmetric.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Warranty / Representation Risk",
+    "sub_category": "Warranty",
+    "reference_text": "Industry Standard: Implied warranties (merchantability, fitness for a particular purpose) are commonly disclaimed in commercial services agreements. The absence of any disclaimer, combined with broad express warranties covering all possible uses, creates significant ongoing liability exposure for the service provider beyond the initial delivery.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Warranty / Representation Risk",
+    "sub_category": "Representations",
+    "reference_text": "Industry Standard: Representations in commercial contracts should be accurate as of the date of signing. Representations that are 'evergreen' (deemed to be remade at all times during the agreement) impose a continuous obligation of accuracy that can be impossible to maintain and creates ongoing exposure to misrepresentation claims.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Indemnification Risk",
+    "sub_category": "Uncapped Indemnification",
+    "reference_text": "Industry Standard: Even where indemnification obligations are accepted, they should be subject to the same liability cap that applies to the rest of the agreement. An uncapped indemnification obligation that sits outside the liability limitation framework creates potentially unlimited financial exposure for the indemnifying party.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Termination Risk",
+    "sub_category": "Termination Penalty",
+    "reference_text": "Industry Standard: Early termination fees or penalties are permissible when reasonable and proportionate to actual anticipated losses (e.g., unamortized setup costs). A termination penalty that far exceeds the remaining contract value, or that functions as a deterrent rather than a compensatory measure, is considered an unenforceable penalty clause.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Confidentiality Risk",
+    "sub_category": "Non-Disclosure",
+    "reference_text": "Industry Standard: Non-disclosure obligations should specify the medium and circumstances of disclosure, the categories of protected information, and the employees or contractors bound by the obligation. An NDA that prohibits disclosure in perpetuity, covers all information exchanged regardless of sensitivity, and applies to an unlimited number of the receiving party's personnel is commercially unworkable.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Liability Exposure",
+    "sub_category": "Gross Negligence Carve-Out",
+    "reference_text": "Industry Standard: Liability limitations typically carve out losses arising from a party's gross negligence, fraud, or willful misconduct. A liability cap with no carve-out for intentional wrongdoing or gross negligence is often deemed unenforceable as contrary to public policy, particularly in consumer-facing or professional services contexts.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Non-Compete / Exclusivity Overreach",
+    "sub_category": "Scope Of Services Restriction",
+    "reference_text": "Industry Standard: Restrictions on a contractor's ability to provide services to other clients should be narrowly tailored to the client's legitimate business interests (i.e., direct competitors, not all possible clients in any industry). A clause restricting a contractor from working in an entire industry — even with clients who have no relationship to the current project — is overbroad and likely unenforceable.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Payment Terms Risk",
+    "sub_category": "Invoicing Requirements",
+    "reference_text": "Industry Standard: Invoicing procedures should be clearly specified but not unduly burdensome. Clauses that require rigid invoicing formats, excessive supporting documentation, or mandatory pre-approval before any invoice can be submitted effectively delay or enable the client to reject payment for administrative rather than substantive reasons.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Termination Risk",
+    "sub_category": "Immediate Termination",
+    "reference_text": "Industry Standard: Immediate termination (without notice or cure period) should be reserved for the most severe breaches — fraud, criminal conduct, or insolvency. Clauses that permit immediate termination for any breach, including minor or technical ones, are considered disproportionate and can expose the terminating party to wrongful termination claims.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Dispute / Governing Law",
+    "sub_category": "Class Action Waiver",
+    "reference_text": "Industry Standard: Class action waivers in commercial contracts between businesses are generally enforceable in the United States following the Supreme Court's decision in AT&T Mobility v. Concepcion. However, waivers that prevent employees or consumers from bringing representative claims under applicable state law (e.g., California PAGA) may be struck down as contrary to public policy.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Commercial Commitment Constraints",
+    "sub_category": "Price Adjustment",
+    "reference_text": "Industry Standard: Price adjustment mechanisms in long-term contracts should be tied to objective indices (e.g., CPI, PPI) or a mutually agreed rate card, and should be subject to a cap. Clauses granting one party the unilateral right to adjust pricing without a defined methodology or ceiling are non-standard and expose the other party to uncontrolled cost increases.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "IP Ownership Risk",
+    "sub_category": "Background Ip",
+    "reference_text": "Industry Standard: A contractor's pre-existing intellectual property, tools, frameworks, and methodologies (background IP) should be expressly excluded from any IP assignment clause. Clauses that fail to carve out the contractor's background IP effectively require the contractor to surrender tools they need to continue operating their business after the engagement ends.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "IP Ownership Risk",
+    "sub_category": "Moral Rights",
+    "reference_text": "Industry Standard: In many jurisdictions (EU, Canada, Australia), creators retain moral rights in their creative works regardless of whether economic rights are transferred. A clause purporting to waive an author's moral rights — such as the right to attribution and the right to object to derogatory treatment — may be unenforceable and is considered ethically non-standard.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Warranty / Representation Risk",
+    "sub_category": "Disclaimer Of Warranties",
+    "reference_text": "Industry Standard: A disclaimer of all warranties, express or implied, is standard in commercial software and SaaS contracts but is less common and more problematic in professional services agreements. A complete disclaimer of all warranties in a professional services context may not adequately protect the client's legitimate expectation of workmanlike performance.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Force Majeure / Change",
+    "sub_category": "Business Continuity",
+    "reference_text": "Industry Standard: In critical service agreements, clients may reasonably require a contractor or vendor to maintain a business continuity plan and to notify the client within a defined period (e.g., 24-48 hours) of a force majeure event. Obligations to maintain business continuity that are disproportionate to the contract value or the nature of the services are commercially unreasonable.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Confidentiality Risk",
+    "sub_category": "Publicity And Press Releases",
+    "reference_text": "Industry Standard: Both parties should require mutual written consent before issuing any press releases or public announcements referencing the other party. A clause that grants one party a unilateral right to use the other's name and logo for marketing purposes without consent is non-standard and can be commercially damaging.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Payment Terms Risk",
+    "sub_category": "Currency And Exchange Risk",
+    "reference_text": "Industry Standard: In international contracts, currency risk should be expressly allocated. A clause that requires a contractor to invoice in the client's currency but bears all exchange rate risk is non-standard. Best practice is to specify the contract currency, the applicable exchange rate methodology, and which party bears fluctuation risk above a defined threshold.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Auto-Renewal Trap",
+    "sub_category": "Unilateral Modification",
+    "reference_text": "Industry Standard: Terms of service or subscription agreements that allow the provider to unilaterally modify terms with short or no notice (e.g., 7-14 days) effectively allow one party to change the fundamental deal post-signing. Best practice is a minimum 30-day notice period combined with the right for the other party to terminate if the modification is materially adverse.",
+    "authority_type": "industry_norm",
+    "scope": "general"
+  },
+  {
+    "risk_category": "Indemnification Risk",
+    "sub_category": "Environmental Indemnification",
+    "reference_text": "Industry Standard: Environmental indemnification clauses in real property, construction, or manufacturing contracts can create vast, open-ended liability. A party agreeing to indemnify for environmental contamination should limit their obligation to contamination caused by their own activities during a defined period, and should not agree to indemnify for pre-existing conditions they did not create.",
     "authority_type": "industry_norm",
     "scope": "general"
   }

@@ -1,7 +1,6 @@
 import urllib.request
 import json
 import zipfile
-import os
 
 print("Fetching latest release...")
 url = "https://api.github.com/repos/ggerganov/llama.cpp/releases/latest"

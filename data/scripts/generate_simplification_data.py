@@ -199,7 +199,6 @@ def _generate_rule_based_negative(positive_rewrite: str) -> tuple[str, str]:
 # Data loading & Resume logic
 # ---------------------------------------------------------------------------
 
-import re
 
 # Redaction regex: matches [***], [*], [REDACTED], [Date], or any brackets with upper case / asterisks
 REDACTION_REGEX = re.compile(r'\[\s*\*{1,}\s*\]|\[\s*REDACTED\s*\]|\[\s*Date\s*\]|\[\s*[A-Z_]+\s*\]', re.IGNORECASE)
@@ -395,7 +394,7 @@ def run_generation(
                 rh.flush()
                 rejected_count += 1
                 if test_batch:
-                    print(f"⚠ REJECTED — not saved as training data")
+                    print("⚠ REJECTED — not saved as training data")
                 continue
 
             pos_result = {

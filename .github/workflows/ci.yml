@@ -1,4 +1,4 @@
-﻿name: CI
+name: CI
 
 on:
   push:
@@ -30,7 +30,7 @@ jobs:
 
       - name: Lint with ruff
         run: |
-          ruff check . || true
+          ruff check .
 
       - name: Run data quality tests
         run: |

@@ -2,7 +2,6 @@ import json
 import logging
 from pathlib import Path
 import random
-import re
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)

@@ -34,7 +34,7 @@ def main():
                 
     assert len(adversarial_examples) == 23, f"Expected 23 unique adversarial clauses, got {len(adversarial_examples)}"
         
-    print(f"Connecting to LMStudio at localhost:1234...")
+    print("Connecting to LMStudio at localhost:1234...")
     
     results = []
     latencies = []

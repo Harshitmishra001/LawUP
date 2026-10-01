@@ -25,7 +25,7 @@ class ClassificationAgent:
 
     def __init__(self, model_name: str = "LawUP-Classifier", lm_studio_url: str = None):
         if lm_studio_url is None:
-            lm_studio_url = os.environ.get("LM_STUDIO_URL", "http://172.25.241.3:1234/v1")
+            lm_studio_url = os.environ.get("LM_STUDIO_URL", "http://localhost:1234/v1")
         self.client = OpenAI(base_url=lm_studio_url, api_key="lm-studio")
         self.model_name = model_name
         self.url = lm_studio_url
@@ -64,7 +64,7 @@ class ClassificationAgent:
         except httpx.ConnectError:
             print(f"ERROR: Could not connect to LM Studio server at {self.url}.")
             raise
-        except json.JSONDecodeError as e:
+        except json.JSONDecodeError:
             print(f"ERROR: Failed to parse JSON from classifier model: {raw_text}")
             # If parsing fails, return empty risks to fail safely
             return []
@@ -77,7 +77,7 @@ if __name__ == "__main__":
     # Test standalone execution
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--url", default="http://172.25.241.3:1234/v1", help="LM Studio API URL")
+    parser.add_argument("--url", default="http://localhost:1234/v1", help="LM Studio API URL")
     args = parser.parse_args()
 
     agent = ClassificationAgent(lm_studio_url=args.url)

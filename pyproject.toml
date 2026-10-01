@@ -19,7 +19,7 @@ exclude = [
 [tool.ruff.lint]
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`) codes by default.
 select = ["E", "F"]
-ignore = []
+ignore = ["E501", "E701", "E741", "F841", "E402"]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]

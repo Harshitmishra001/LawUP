@@ -1,6 +1,4 @@
-import os
 import torch
-import shutil
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import PeftModel
 

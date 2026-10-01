@@ -110,7 +110,7 @@ def verify_meaning(original: str, rewrite: str, model: str = "LawUP") -> dict:
     except httpx.ConnectError:
         print(f"ERROR: Could not connect to LM Studio server at {lm_studio_url}.")
         raise
-    except json.JSONDecodeError as e:
+    except json.JSONDecodeError:
         print(f"ERROR: Failed to parse JSON from model: {raw_text}")
         return {"error": "JSON parse failed", "raw": raw_text}
     except Exception as e:

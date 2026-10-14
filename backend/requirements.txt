@@ -1,5 +1,11 @@
-fastapi
-uvicorn
-pydantic
-openai
-transformers
+fastapi>=0.100.0
+uvicorn>=0.22.0
+pydantic>=2.0.0
+openai>=1.0.0
+transformers>=4.40.0
+sentence-transformers>=2.2.0
+torch>=2.0.0
+httpx>=0.24.0
+pypdf>=3.0.0
+python-docx>=0.8.11
+python-multipart>=0.0.6

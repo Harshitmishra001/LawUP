@@ -24,13 +24,16 @@ jobs:
 
       - name: Install dependencies
         run: |
-          # Install dependencies from existing requirement files and also test tools
           pip install -r backend/requirements.txt -r data/scripts/requirements.txt --break-system-packages
-          pip install pytest ruff sentence-transformers --break-system-packages
+          pip install pytest ruff --break-system-packages
 
       - name: Lint with ruff
         run: |
           ruff check .
+
+      - name: Run document ingestion tests
+        run: |
+          pytest backend/tests/test_ingestion.py -v
 
       - name: Run data quality tests
         run: |

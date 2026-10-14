@@ -2,11 +2,13 @@
 
 import os
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, BinaryIO, Dict, List, Optional, Union
+from pathlib import Path
 
 from backend.app.agents.simplifier import SimplifierAgent
 from backend.app.agents.classifier import ClassificationAgent
 from backend.app.agents.grounding import GroundingAgent
+from backend.app.agents.ingestion import IngestionAgent, ClauseUnit
 from backend.app.agents.verifier_meaning import verify_meaning
 
 
@@ -43,26 +45,44 @@ class OrchestratorResult:
         }
 
 
+class DocumentResult:
+    """Structured result from analyzing an entire multi-clause contract."""
+
+    def __init__(
+        self,
+        total_clauses: int,
+        clauses: List[Dict[str, Any]],
+        total_latency_ms: float,
+        risk_summary: Dict[str, int],
+        verification_summary: Dict[str, int],
+    ):
+        self.total_clauses = total_clauses
+        self.clauses = clauses
+        self.total_latency_ms = total_latency_ms
+        self.risk_summary = risk_summary
+        self.verification_summary = verification_summary
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "total_clauses": self.total_clauses,
+            "clauses": self.clauses,
+            "total_latency_ms": self.total_latency_ms,
+            "risk_summary": self.risk_summary,
+            "verification_summary": self.verification_summary,
+        }
+
+
 class Orchestrator:
     """Pipeline Orchestrator — deterministic, fail-closed multi-agent pipeline.
 
     Pipeline step: 6 (reference Section 5 of PLAN.md)
 
-    Chains agents in the following order for a single clause:
-        SimplifierAgent  → ClassificationAgent → GroundingAgent → MeaningVerifier
+    Chains agents in the following order:
+        IngestionAgent ➔ SimplifierAgent ➔ ClassificationAgent ➔ GroundingAgent ➔ MeaningVerifier
 
     Fail-closed design: each stage is wrapped in a try/except. On failure,
     the stage returns a safe empty/error value rather than propagating an
-    exception and crashing the full pipeline. The caller receives the partial
-    result with an error key indicating which stage failed.
-
-    Usage (sync):
-        orchestrator = Orchestrator(lm_studio_url="http://localhost:1234/v1")
-        result = orchestrator.run_sync(clause_text="The receiving party shall...")
-        print(result.to_dict())
-
-    Usage (async, from FastAPI):
-        result = await orchestrator.run(clause_text="The receiving party shall...")
+    exception and crashing the full pipeline.
     """
 
     def __init__(
@@ -80,6 +100,7 @@ class Orchestrator:
         self.lm_studio_url = lm_studio_url
 
         # Initialise all agents once at construction time — avoids repeated cold-starts
+        self.ingestion = IngestionAgent()
         self.simplifier = SimplifierAgent(
             model_name=simplifier_model,
             lm_studio_url=lm_studio_url,
@@ -94,8 +115,16 @@ class Orchestrator:
         )
         self.verifier_model = verifier_model
 
+    def parse_document(
+        self,
+        input_data: Union[str, bytes, BinaryIO, Path],
+        filename: Optional[str] = None,
+    ) -> List[ClauseUnit]:
+        """Stage 1: Extract structured clauses from document without running LLM pipeline."""
+        return self.ingestion.ingest(input_data, filename=filename)
+
     async def run(self, clause_text: str) -> OrchestratorResult:
-        """Async entry point — used by FastAPI endpoints.
+        """Run single-clause pipeline (Stages 2–5).
 
         Args:
             clause_text: A single raw legal clause string.
@@ -159,45 +188,76 @@ class Orchestrator:
             stage_latencies_ms=stage_latencies,
         )
 
-    def run_sync(self, clause_text: str) -> OrchestratorResult:
-        """Synchronous entry point — useful for scripts and CLI tools.
-
-        Note: SimplifierAgent uses the sync client here.
+    async def run_document(
+        self,
+        document_data: Union[str, bytes, BinaryIO, Path],
+        filename: Optional[str] = None,
+        max_clauses: int = 50,
+    ) -> DocumentResult:
+        """Run full end-to-end multi-agent pipeline on a complete document (Stages 1–5).
 
         Args:
-            clause_text: A single raw legal clause string.
+            document_data: Raw text, PDF/DOCX bytes, or stream.
+            filename: Optional filename for format resolution.
+            max_clauses: Maximum number of clauses to analyze in one run.
 
         Returns:
-            OrchestratorResult with outputs from all pipeline stages.
+            DocumentResult containing clause analyses, summary metrics, and aggregate latency.
         """
+        start_time = time.time()
+
+        # Stage 1: Ingestion
+        clause_units = self.parse_document(document_data, filename=filename)
+        selected_units = clause_units[:max_clauses]
+
+        analyzed_clauses: List[Dict[str, Any]] = []
+        risk_summary: Dict[str, int] = {}
+        verification_summary: Dict[str, int] = {"PASS": 0, "FAIL": 0, "ERROR": 0}
+
+        for unit in selected_units:
+            analysis = await self.run(unit.text)
+            clause_record = {
+                "index": unit.index,
+                "heading": unit.heading,
+                "word_count": unit.word_count,
+                "analysis": analysis.to_dict(),
+            }
+            analyzed_clauses.append(clause_record)
+
+            # Accumulate risk categories
+            for r in analysis.risks_identified:
+                cat = r.get("risk", "Unknown Risk")
+                risk_summary[cat] = risk_summary.get(cat, 0) + 1
+
+            # Accumulate verification verdict
+            v = analysis.verifier_report.get("verdict", "ERROR")
+            if v in verification_summary:
+                verification_summary[v] += 1
+            else:
+                verification_summary["ERROR"] += 1
+
+        total_latency = (time.time() - start_time) * 1000
+
+        return DocumentResult(
+            total_clauses=len(clause_units),
+            clauses=analyzed_clauses,
+            total_latency_ms=total_latency,
+            risk_summary=risk_summary,
+            verification_summary=verification_summary,
+        )
+
+    def run_sync(self, clause_text: str) -> OrchestratorResult:
+        """Synchronous entry point for scripts and CLI tools."""
         import asyncio
-        # Reuse the async implementation via a new event loop for simplicity
-        # (avoids duplicating stage logic)
+
         try:
             loop = asyncio.get_event_loop()
             if loop.is_running():
                 import concurrent.futures
+
                 with concurrent.futures.ThreadPoolExecutor() as pool:
-                    future = pool.submit(asyncio.run, self.run(clause_text))
-                    return future.result()
+                    return pool.submit(asyncio.run, self.run(clause_text)).result()
             else:
                 return loop.run_until_complete(self.run(clause_text))
         except RuntimeError:
             return asyncio.run(self.run(clause_text))
-
-
-if __name__ == "__main__":
-    import json
-
-    orchestrator = Orchestrator()
-
-    test_clause = (
-        "The Receiving Party shall indemnify and hold harmless the Disclosing Party "
-        "against any consequential damages arising from a breach."
-    )
-
-    print("Testing Orchestrator (sync)...")
-    print(f"Clause: {test_clause}\n")
-
-    result = orchestrator.run_sync(test_clause)
-    print(json.dumps(result.to_dict(), indent=2))

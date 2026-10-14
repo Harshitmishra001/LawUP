@@ -1,11 +1,12 @@
 import os
 import sys
 import time
+from typing import Optional
 
 # Add project root to sys.path so shared/ and backend/ are importable
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from pydantic import BaseModel
 from transformers import AutoTokenizer
 
@@ -15,7 +16,7 @@ from backend.app.agents.orchestrator import Orchestrator
 app = FastAPI(
     title="LawUP API",
     description="Clause-by-clause legal risk analysis pipeline backed by fine-tuned SmolLM3 models.",
-    version="0.4.0",
+    version="0.5.0",
 )
 
 # LM Studio URL — configure via environment variable
@@ -39,6 +40,11 @@ class ClauseRequest(BaseModel):
     clause: str
 
 
+class ContractTextRequest(BaseModel):
+    contract_text: str
+    max_clauses: Optional[int] = 50
+
+
 class SimplifyResponse(BaseModel):
     rewrite: str
     latency_ms: float
@@ -54,6 +60,19 @@ class AnalyzeResponse(BaseModel):
     stage_latencies_ms: dict
 
 
+class IngestResponse(BaseModel):
+    total_clauses: int
+    clauses: list
+
+
+class DocumentAnalyzeResponse(BaseModel):
+    total_clauses: int
+    clauses: list
+    total_latency_ms: float
+    risk_summary: dict
+    verification_summary: dict
+
+
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
@@ -62,6 +81,51 @@ class AnalyzeResponse(BaseModel):
 def health_check():
     """Simple liveness probe."""
     return {"status": "ok", "lm_studio_url": lm_studio_url}
+
+
+@app.post("/ingest", response_model=IngestResponse)
+async def ingest_contract_text(request: ContractTextRequest):
+    """
+    Stage 1: Ingest and segment raw contract text into structured clause units.
+
+    Extracts section headings (e.g. "1. SERVICES", "ARTICLE 4"), cleans text,
+    and discards fragments below the minimum length threshold.
+    """
+    if not request.contract_text or not request.contract_text.strip():
+        raise HTTPException(status_code=400, detail="contract_text cannot be empty.")
+
+    try:
+        clause_units = orchestrator.parse_document(request.contract_text)
+        return IngestResponse(
+            total_clauses=len(clause_units),
+            clauses=[c.to_dict() for c in clause_units],
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Ingestion failed: {str(e)}")
+
+
+@app.post("/ingest/file", response_model=IngestResponse)
+async def ingest_contract_file(file: UploadFile = File(...)):
+    """
+    Stage 1 (File Upload): Ingest and parse PDF, DOCX, TXT, or MD documents.
+
+    Extracts text and segments the document into structured clause units.
+    """
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="Uploaded file must have a filename.")
+
+    content = await file.read()
+    if not content:
+        raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+
+    try:
+        clause_units = orchestrator.parse_document(content, filename=file.filename)
+        return IngestResponse(
+            total_clauses=len(clause_units),
+            clauses=[c.to_dict() for c in clause_units],
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"File ingestion failed: {str(e)}")
 
 
 @app.post("/simplify", response_model=SimplifyResponse)
@@ -101,12 +165,12 @@ async def simplify_clause(request: ClauseRequest):
 @app.post("/analyze", response_model=AnalyzeResponse)
 async def analyze_clause(request: ClauseRequest):
     """
-    End-to-end LawUP pipeline — runs all four stages for a single clause:
+    End-to-end LawUP pipeline for a single clause:
 
-        Stage 2: SimplifierAgent   — plain-English rewrite via LoRA SmolLM3
+        Stage 2: SimplifierAgent     — plain-English rewrite via LoRA SmolLM3
         Stage 3: ClassificationAgent — multi-label risk detection via LoRA SmolLM3
-        Stage 4: GroundingAgent    — semantic retrieval from statute corpus
-        Stage 5a: MeaningVerifier  — LLM-based bi-directional entailment check
+        Stage 4: GroundingAgent      — semantic retrieval from statute corpus
+        Stage 5a: MeaningVerifier    — LLM-based bi-directional entailment check
 
     All stages are fail-closed: a stage failure returns a safe empty/error value
     rather than crashing the whole request.
@@ -129,3 +193,56 @@ async def analyze_clause(request: ClauseRequest):
         total_latency_ms=result.total_latency_ms,
         stage_latencies_ms=result.stage_latencies_ms,
     )
+
+
+@app.post("/analyze-document", response_model=DocumentAnalyzeResponse)
+async def analyze_document_text(request: ContractTextRequest):
+    """
+    Full end-to-end multi-agent pipeline for an entire raw contract (Stages 1–5):
+
+        Stage 1: IngestionAgent      — segmentation into structured clause units
+        Stage 2: SimplifierAgent     — plain-English rewrites
+        Stage 3: ClassificationAgent — multi-label risk identification
+        Stage 4: GroundingAgent      — statutory & industry standard citations
+        Stage 5a: MeaningVerifier    — bi-directional NLI verification
+    """
+    if not request.contract_text or not request.contract_text.strip():
+        raise HTTPException(status_code=400, detail="contract_text cannot be empty.")
+
+    try:
+        max_c = request.max_clauses or 50
+        doc_result = await orchestrator.run_document(request.contract_text, max_clauses=max_c)
+        return DocumentAnalyzeResponse(
+            total_clauses=doc_result.total_clauses,
+            clauses=doc_result.clauses,
+            total_latency_ms=doc_result.total_latency_ms,
+            risk_summary=doc_result.risk_summary,
+            verification_summary=doc_result.verification_summary,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Document analysis failed: {str(e)}")
+
+
+@app.post("/analyze-document/file", response_model=DocumentAnalyzeResponse)
+async def analyze_document_file(file: UploadFile = File(...), max_clauses: int = 50):
+    """
+    Full document analysis via PDF, DOCX, TXT, or MD file upload.
+    """
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="Uploaded file must have a filename.")
+
+    content = await file.read()
+    if not content:
+        raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+
+    try:
+        doc_result = await orchestrator.run_document(content, filename=file.filename, max_clauses=max_clauses)
+        return DocumentAnalyzeResponse(
+            total_clauses=doc_result.total_clauses,
+            clauses=doc_result.clauses,
+            total_latency_ms=doc_result.total_latency_ms,
+            risk_summary=doc_result.risk_summary,
+            verification_summary=doc_result.verification_summary,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Document analysis failed: {str(e)}")

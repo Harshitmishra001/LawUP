@@ -25,7 +25,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r backend/requirements.txt -r data/scripts/requirements.txt --break-system-packages
-          pip install pytest ruff --break-system-packages
+          pip install pytest pytest-asyncio ruff --break-system-packages
 
       - name: Lint with ruff
         run: |
@@ -34,6 +34,10 @@ jobs:
       - name: Run document ingestion tests
         run: |
           pytest backend/tests/test_ingestion.py -v
+
+      - name: Run meaning verifier tests
+        run: |
+          pytest backend/tests/test_verifier_meaning.py -v
 
       - name: Run data quality tests
         run: |

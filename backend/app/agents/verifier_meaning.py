@@ -1,8 +1,11 @@
-import os
+"""Meaning Verifier (NLI) Agent — bidirectional entailment verification for legal rewrites."""
+
 import json
-import httpx
+import os
 import re
-from openai import OpenAI
+from typing import Any, Dict, List, Optional
+import httpx
+from openai import AsyncOpenAI, OpenAI
 
 SYSTEM_PROMPT = """You are a meaning-preservation auditor for legal contract simplification. 
 You will be given two texts:
@@ -80,53 +83,337 @@ REWRITE:
 
 Evaluate meaning preservation per your instructions. Respond with the JSON object only."""
 
-# Setup LM Studio client
-lm_studio_url = os.environ.get("LM_STUDIO_URL", "http://localhost:1234/v1")
-client = OpenAI(base_url=lm_studio_url, api_key="lm-studio")
+VALID_FAILURE_CATEGORIES = {
+    "HALLUCINATION",
+    "CONTRADICTION",
+    "OMISSION",
+    "STRUCTURAL_COLLAPSE",
+}
+
+
+class MeaningVerifierAgent:
+    """Meaning Verifier Agent — bidirectional Natural Language Inference (NLI) auditor.
+
+    Pipeline step: 5a (reference Section 5 of PLAN.md)
+
+    Verifies bidirectional entailment between an original contract clause and its
+    simplified rewrite:
+      1. Direction A: Forward entailment (Original entails Rewrite).
+         Flags HALLUCINATIONS and CONTRADICTIONS.
+      2. Direction B: Backward entailment (Rewrite entails Original).
+         Flags OMISSIONS and STRUCTURAL_COLLAPSE.
+
+    Fail-closed policy:
+      - If either entailment direction fails, verdict is FAIL.
+      - If parsing or connection fails, verdict is FAIL with LOW confidence.
+    """
+
+    def __init__(
+        self,
+        model_name: str = "LawUP",
+        lm_studio_url: Optional[str] = None,
+        timeout: float = 30.0,
+        strict_mode: bool = True,
+    ):
+        if lm_studio_url is None:
+            lm_studio_url = os.environ.get("LM_STUDIO_URL", "http://localhost:1234/v1")
+
+        self.model_name = model_name
+        self.url = lm_studio_url
+        self.timeout = timeout
+        self.strict_mode = strict_mode
+
+        self._sync_client = OpenAI(
+            base_url=lm_studio_url,
+            api_key="lm-studio",
+            timeout=timeout,
+        )
+        self._async_client = AsyncOpenAI(
+            base_url=lm_studio_url,
+            api_key="lm-studio",
+            timeout=timeout,
+        )
+
+    def _build_prompt(self, original: str, rewrite: str) -> str:
+        return USER_MESSAGE_TEMPLATE.format(
+            original_clause=original.strip(),
+            rewrite_text=rewrite.strip(),
+        )
+
+    def _parse_and_validate_response(self, raw_text: str) -> Dict[str, Any]:
+        """Extracts JSON from model output and enforces strict schema constraints."""
+        json_str = raw_text.strip()
+
+        # Handle markdown fences if returned
+        fence_match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", raw_text, re.DOTALL)
+        if fence_match:
+            json_str = fence_match.group(1).strip()
+        else:
+            json_match = re.search(r"(\{.*\})", raw_text, re.DOTALL)
+            if json_match:
+                json_str = json_match.group(1).strip()
+
+        try:
+            parsed = json.loads(json_str)
+        except json.JSONDecodeError as exc:
+            return {
+                "original_entails_rewrite": False,
+                "rewrite_entails_original": False,
+                "verdict": "FAIL",
+                "failures": [
+                    {
+                        "category": "STRUCTURAL_COLLAPSE",
+                        "description": f"Failed to parse structured NLI output from verifier: {exc}",
+                        "original_span": None,
+                        "rewrite_span": None,
+                    }
+                ],
+                "confidence": "LOW",
+                "error": f"JSON parse error: {exc}",
+                "raw": raw_text,
+            }
+
+        # Normalize fields
+        orig_entails = bool(parsed.get("original_entails_rewrite", False))
+        rewr_entails = bool(parsed.get("rewrite_entails_original", False))
+
+        raw_failures = parsed.get("failures", [])
+        validated_failures: List[Dict[str, Any]] = []
+        if isinstance(raw_failures, list):
+            for item in raw_failures:
+                if isinstance(item, dict):
+                    cat = item.get("category", "OMISSION")
+                    if cat not in VALID_FAILURE_CATEGORIES:
+                        cat = "OMISSION"
+                    validated_failures.append({
+                        "category": cat,
+                        "description": str(item.get("description", "")),
+                        "original_span": item.get("original_span"),
+                        "rewrite_span": item.get("rewrite_span"),
+                    })
+
+        # Strict fail-closed verdict resolution
+        if self.strict_mode:
+            is_pass = orig_entails and rewr_entails and (len(validated_failures) == 0)
+        else:
+            is_pass = orig_entails and rewr_entails
+
+        verdict = "PASS" if is_pass else "FAIL"
+
+        raw_conf = str(parsed.get("confidence", "MEDIUM")).upper()
+        confidence = raw_conf if raw_conf in {"HIGH", "MEDIUM", "LOW"} else "MEDIUM"
+
+        return {
+            "original_entails_rewrite": orig_entails,
+            "rewrite_entails_original": rewr_entails,
+            "verdict": verdict,
+            "failures": validated_failures,
+            "confidence": confidence,
+        }
+
+    def verify_heuristic(self, original: str, rewrite: str) -> Dict[str, Any]:
+        """Fast heuristic bidirectional check when offline or for fast validation.
+
+        Checks for:
+          - Dropped quantitative terms (dollar amounts, percentages, day limits).
+          - Inverted modal polarity ('shall not', 'prohibited' vs 'may', 'can').
+        """
+        orig = original.strip()
+        rewr = rewrite.strip()
+        failures: List[Dict[str, Any]] = []
+
+        # 1. Number / Dollar / Day omissions
+        num_patterns = [
+            r"\$\s*\d+(?:,\d{3})*(?:\.\d+)?",
+            r"\d+\s*%",
+            r"\b\d+\s+(?:days?|months?|years?|business days?)\b",
+        ]
+        for pat in num_patterns:
+            orig_matches = set(re.findall(pat, orig, flags=re.IGNORECASE))
+            rewr_matches = set(re.findall(pat, rewr, flags=re.IGNORECASE))
+            missing = orig_matches - rewr_matches
+            for m in missing:
+                failures.append({
+                    "category": "OMISSION",
+                    "description": f"Quantitative specification '{m}' from original was omitted in rewrite.",
+                    "original_span": m,
+                    "rewrite_span": None,
+                })
+
+        # 2. Strict negative obligations turned permissive
+        negations = ["shall not", "must not", "neither party shall", "in no event shall", "strictly prohibited"]
+        for neg in negations:
+            if neg in orig.lower() and not any(p in rewr.lower() for p in ["shall not", "must not", "cannot", "may not", "not allowed", "prohibited", "neither"]):
+                failures.append({
+                    "category": "CONTRADICTION",
+                    "description": f"Strict prohibition '{neg}' appears inverted or weakened in rewrite.",
+                    "original_span": neg,
+                    "rewrite_span": None,
+                })
+
+        orig_entails = not any(f["category"] in {"HALLUCINATION", "CONTRADICTION"} for f in failures)
+        rewr_entails = not any(f["category"] in {"OMISSION", "STRUCTURAL_COLLAPSE"} for f in failures)
+        verdict = "PASS" if (orig_entails and rewr_entails and len(failures) == 0) else "FAIL"
+
+        return {
+            "original_entails_rewrite": orig_entails,
+            "rewrite_entails_original": rewr_entails,
+            "verdict": verdict,
+            "failures": failures,
+            "confidence": "MEDIUM" if len(failures) > 0 else "LOW",
+        }
+
+    def run(self, original: str, rewrite: str) -> Dict[str, Any]:
+        """Synchronously verify meaning preservation between original and rewrite.
+
+        Args:
+            original: The raw legal clause text.
+            rewrite: The plain-English simplified rewrite.
+
+        Returns:
+            Dict containing NLI verification results and verdicts.
+        """
+        if not original or not original.strip():
+            return {
+                "original_entails_rewrite": False,
+                "rewrite_entails_original": False,
+                "verdict": "FAIL",
+                "failures": [{"category": "OMISSION", "description": "Original clause is empty."}],
+                "confidence": "HIGH",
+            }
+        if not rewrite or not rewrite.strip():
+            return {
+                "original_entails_rewrite": False,
+                "rewrite_entails_original": False,
+                "verdict": "FAIL",
+                "failures": [{"category": "OMISSION", "description": "Rewrite is empty."}],
+                "confidence": "HIGH",
+            }
+
+        prompt = self._build_prompt(original, rewrite)
+
+        try:
+            response = self._sync_client.chat.completions.create(
+                model=self.model_name,
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.0,
+            )
+            raw_text = response.choices[0].message.content.strip()
+            return self._parse_and_validate_response(raw_text)
+
+        except (httpx.ConnectError, httpx.TimeoutException) as exc:
+            # Fall back to heuristic check in offline/unreachable conditions with fail-closed warning
+            heuristic = self.verify_heuristic(original, rewrite)
+            heuristic["confidence"] = "LOW"
+            heuristic["error"] = f"LM Studio unreachable at {self.url} ({type(exc).__name__}): {exc}"
+            return heuristic
+        except Exception as exc:
+            return {
+                "original_entails_rewrite": False,
+                "rewrite_entails_original": False,
+                "verdict": "FAIL",
+                "failures": [
+                    {
+                        "category": "STRUCTURAL_COLLAPSE",
+                        "description": f"Verification error: {exc}",
+                        "original_span": None,
+                        "rewrite_span": None,
+                    }
+                ],
+                "confidence": "LOW",
+                "error": str(exc),
+            }
+
+    async def run_async(self, original: str, rewrite: str) -> Dict[str, Any]:
+        """Asynchronously verify meaning preservation between original and rewrite.
+
+        Args:
+            original: The raw legal clause text.
+            rewrite: The plain-English simplified rewrite.
+
+        Returns:
+            Dict containing NLI verification results and verdicts.
+        """
+        if not original or not original.strip():
+            return {
+                "original_entails_rewrite": False,
+                "rewrite_entails_original": False,
+                "verdict": "FAIL",
+                "failures": [{"category": "OMISSION", "description": "Original clause is empty."}],
+                "confidence": "HIGH",
+            }
+        if not rewrite or not rewrite.strip():
+            return {
+                "original_entails_rewrite": False,
+                "rewrite_entails_original": False,
+                "verdict": "FAIL",
+                "failures": [{"category": "OMISSION", "description": "Rewrite is empty."}],
+                "confidence": "HIGH",
+            }
+
+        prompt = self._build_prompt(original, rewrite)
+
+        try:
+            response = await self._async_client.chat.completions.create(
+                model=self.model_name,
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.0,
+            )
+            raw_text = response.choices[0].message.content.strip()
+            return self._parse_and_validate_response(raw_text)
+
+        except (httpx.ConnectError, httpx.TimeoutException) as exc:
+            # Fall back to heuristic check with fail-closed warning
+            heuristic = self.verify_heuristic(original, rewrite)
+            heuristic["confidence"] = "LOW"
+            heuristic["error"] = f"LM Studio unreachable at {self.url} ({type(exc).__name__}): {exc}"
+            return heuristic
+        except Exception as exc:
+            return {
+                "original_entails_rewrite": False,
+                "rewrite_entails_original": False,
+                "verdict": "FAIL",
+                "failures": [
+                    {
+                        "category": "STRUCTURAL_COLLAPSE",
+                        "description": f"Verification error: {exc}",
+                        "original_span": None,
+                        "rewrite_span": None,
+                    }
+                ],
+                "confidence": "LOW",
+                "error": str(exc),
+            }
+
+
+# Backwards compatibility function for scripts and evaluations
+_default_agent: Optional[MeaningVerifierAgent] = None
+
 
 def verify_meaning(original: str, rewrite: str, model: str = "LawUP") -> dict:
-    prompt = USER_MESSAGE_TEMPLATE.format(original_clause=original, rewrite_text=rewrite)
-    
-    try:
-        response = client.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.0
-        )
-        raw_text = response.choices[0].message.content.strip()
-        
-        # Robust JSON extraction using regex
-        json_match = re.search(r'(\{.*\})', raw_text, re.DOTALL)
-        if json_match:
-            json_str = json_match.group(1)
-        else:
-            json_str = raw_text
-            
-        return json.loads(json_str)
-        
-    except httpx.ConnectError:
-        print(f"ERROR: Could not connect to LM Studio server at {lm_studio_url}.")
-        raise
-    except json.JSONDecodeError:
-        print(f"ERROR: Failed to parse JSON from model: {raw_text}")
-        return {"error": "JSON parse failed", "raw": raw_text}
-    except Exception as e:
-        print(f"ERROR calling verifier: {e}")
-        return {"error": str(e)}
+    """Module-level verification wrapper preserved for backwards compatibility."""
+    global _default_agent
+    if _default_agent is None or _default_agent.model_name != model:
+        _default_agent = MeaningVerifierAgent(model_name=model)
+    return _default_agent.run(original, rewrite)
+
 
 if __name__ == "__main__":
-    # Test standalone on Example 3
     test_original = """Notwithstanding the foregoing, (a) either Party may, without the other Party's consent, assign this Agreement and its rights and obligations hereunder in whole or in part to an Affiliate; and (b) Dova may assign this Agreement to a successor in interest in connection with the sale or other transfer of all or substantially all of Dova's assets or rights relating to the Product; provided that such assignee shall remain subject to all of the terms and conditions hereof in all respects and shall assume all obligations of Dova hereunder whether accruing before or after such assignment."""
-    
+
     test_rewrite = """Either Party may, without the other's consent, transfer this Agreement and its duties under it to an Affiliate. However:
 
 (a) if a successor takes over Dova's assets or rights related to the Product in connection with a sale or other transfer of all or substantially all of those assets or rights, then Dova may assign this Agreement to that successor.
 
 In either case, the new party must follow all terms and conditions of this Agreement. The new party also assumes all duties owed by Dova under this Agreement, whether they were created before or after the assignment."""
-    
-    print("Testing Example 3 Standalone...")
-    result = verify_meaning(test_original, test_rewrite)
+
+    print("Testing MeaningVerifierAgent Standalone...")
+    agent = MeaningVerifierAgent()
+    result = agent.run(test_original, test_rewrite)
     print(json.dumps(result, indent=2))

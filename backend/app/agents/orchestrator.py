@@ -1,5 +1,6 @@
 """Pipeline Orchestrator — deterministic, fail-closed multi-agent pipeline for LawUP."""
 
+import asyncio
 import os
 import time
 from typing import Any, BinaryIO, Dict, List, Optional, Union
@@ -9,7 +10,7 @@ from backend.app.agents.simplifier import SimplifierAgent
 from backend.app.agents.classifier import ClassificationAgent
 from backend.app.agents.grounding import GroundingAgent
 from backend.app.agents.ingestion import IngestionAgent, ClauseUnit
-from backend.app.agents.verifier_meaning import verify_meaning
+from backend.app.agents.verifier_meaning import MeaningVerifierAgent
 
 
 class OrchestratorResult:
@@ -113,6 +114,10 @@ class Orchestrator:
             corpus_path=corpus_path,
             top_k=top_k_grounding,
         )
+        self.verifier = MeaningVerifierAgent(
+            model_name=verifier_model,
+            lm_studio_url=lm_studio_url,
+        )
         self.verifier_model = verifier_model
 
     def parse_document(
@@ -148,7 +153,7 @@ class Orchestrator:
         # --- Stage 3: Classification ---
         t = time.time()
         try:
-            risks = self.classifier.run(clause)
+            risks = await asyncio.to_thread(self.classifier.run, clause)
         except Exception as e:
             print(f"[Orchestrator] Classifier failed: {e}")
             risks = []
@@ -157,7 +162,7 @@ class Orchestrator:
         # --- Stage 4: Grounding Retrieval ---
         t = time.time()
         try:
-            grounding_refs = self.grounder.run(risks=risks, clause_text=clause)
+            grounding_refs = await asyncio.to_thread(self.grounder.run, risks=risks, clause_text=clause)
         except Exception as e:
             print(f"[Orchestrator] Grounder failed: {e}")
             grounding_refs = []
@@ -166,14 +171,20 @@ class Orchestrator:
         # --- Stage 5a: Meaning Verification ---
         t = time.time()
         try:
-            verifier_report = verify_meaning(
+            verifier_report = await self.verifier.run_async(
                 original=clause,
                 rewrite=rewrite,
-                model=self.verifier_model,
             )
         except Exception as e:
             print(f"[Orchestrator] Verifier failed: {e}")
-            verifier_report = {"error": str(e)}
+            verifier_report = {
+                "original_entails_rewrite": False,
+                "rewrite_entails_original": False,
+                "verdict": "FAIL",
+                "failures": [{"category": "STRUCTURAL_COLLAPSE", "description": f"Verifier exception: {e}"}],
+                "confidence": "LOW",
+                "error": str(e),
+            }
         stage_latencies["verifier_ms"] = (time.time() - t) * 1000
 
         total_latency_ms = (time.time() - start_total) * 1000

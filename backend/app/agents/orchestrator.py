@@ -5,6 +5,8 @@ import os
 import time
 from typing import Any, BinaryIO, Dict, List, Optional, Union
 from pathlib import Path
+import httpx
+import openai
 
 from backend.app.agents.simplifier import SimplifierAgent
 from backend.app.agents.classifier import ClassificationAgent
@@ -145,6 +147,8 @@ class Orchestrator:
         t = time.time()
         try:
             rewrite = await self.simplifier.run_async(clause)
+        except (httpx.ConnectError, openai.APIConnectionError) as e:
+            raise ConnectionError(f"Inference server unreachable at {self.lm_studio_url}: {e}") from e
         except Exception as e:
             print(f"[Orchestrator] Simplifier failed: {e}")
             rewrite = f"[Simplification failed: {type(e).__name__}]"

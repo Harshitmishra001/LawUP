@@ -8,7 +8,12 @@ uids = [u.strip() for u in uids if u.strip()]
 
 assert len(uids) == 23, f"Expected exactly 23 UIDs, but found {len(uids)}"
 
-with open(r'c:\Users\hmhar\Projects\LawUP\data\processed\adversarial_holdout_uids.txt', 'w', encoding='utf-8') as f:
+from pathlib import Path
+
+root_dir = Path(__file__).resolve().parent.parent
+output_path = root_dir / "data" / "processed" / "adversarial_holdout_uids.txt"
+
+with open(output_path, 'w', encoding='utf-8') as f:
     for uid in uids:
         f.write(f"{uid}\n")
 

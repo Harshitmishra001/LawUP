@@ -1,17 +1,23 @@
 import os
 import sys
 import time
-from typing import Optional
 
 # Add project root to sys.path so shared/ and backend/ are importable
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
-from pydantic import BaseModel
 from transformers import AutoTokenizer
 
 from shared.prompt_utils import format_prompt
 from backend.app.agents.orchestrator import Orchestrator
+from backend.app.models import (
+    ClauseRequest,
+    ContractTextRequest,
+    SimplifyResponse,
+    AnalyzeResponse,
+    IngestResponse,
+    DocumentAnalyzeResponse,
+)
 
 app = FastAPI(
     title="LawUP API",
@@ -26,51 +32,17 @@ lm_studio_url = os.environ.get("LM_STUDIO_URL", "http://localhost:1234/v1")
 print("Initialising LawUP pipeline orchestrator...")
 orchestrator = Orchestrator(lm_studio_url=lm_studio_url)
 
-# Load tokenizer for input validation on /simplify
-print("Loading tokenizer for input validation...")
-tokenizer = AutoTokenizer.from_pretrained("HuggingFaceTB/SmolLM3-3B")
-print("Ready.")
+_tokenizer = None
 
 
-# ---------------------------------------------------------------------------
-# Request / Response Models
-# ---------------------------------------------------------------------------
-
-class ClauseRequest(BaseModel):
-    clause: str
-
-
-class ContractTextRequest(BaseModel):
-    contract_text: str
-    max_clauses: Optional[int] = 50
-
-
-class SimplifyResponse(BaseModel):
-    rewrite: str
-    latency_ms: float
-
-
-class AnalyzeResponse(BaseModel):
-    original_clause: str
-    simplified_rewrite: str
-    risks_identified: list
-    grounding_references: list
-    verifier_report: dict
-    total_latency_ms: float
-    stage_latencies_ms: dict
-
-
-class IngestResponse(BaseModel):
-    total_clauses: int
-    clauses: list
-
-
-class DocumentAnalyzeResponse(BaseModel):
-    total_clauses: int
-    clauses: list
-    total_latency_ms: float
-    risk_summary: dict
-    verification_summary: dict
+def get_tokenizer():
+    global _tokenizer
+    if _tokenizer is None:
+        try:
+            _tokenizer = AutoTokenizer.from_pretrained("HuggingFaceTB/SmolLM3-3B", local_files_only=True)
+        except Exception:
+            _tokenizer = AutoTokenizer.from_pretrained("HuggingFaceTB/SmolLM3-3B")
+    return _tokenizer
 
 
 # ---------------------------------------------------------------------------
@@ -144,7 +116,7 @@ async def simplify_clause(request: ClauseRequest):
     prompt = format_prompt(request.clause)
 
     # Exact token validation on the formatted prompt
-    tokens = tokenizer.encode(prompt, add_special_tokens=False)
+    tokens = get_tokenizer().encode(prompt, add_special_tokens=False)
     if len(tokens) > 1024:
         raise HTTPException(
             status_code=400,
@@ -181,6 +153,8 @@ async def analyze_clause(request: ClauseRequest):
 
     try:
         result = await orchestrator.run(clause)
+    except ConnectionError as e:
+        raise HTTPException(status_code=503, detail=f"Inference backend unavailable: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Pipeline failed: {str(e)}")
 
@@ -219,6 +193,8 @@ async def analyze_document_text(request: ContractTextRequest):
             risk_summary=doc_result.risk_summary,
             verification_summary=doc_result.verification_summary,
         )
+    except ConnectionError as e:
+        raise HTTPException(status_code=503, detail=f"Inference backend unavailable: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Document analysis failed: {str(e)}")
 
@@ -244,5 +220,7 @@ async def analyze_document_file(file: UploadFile = File(...), max_clauses: int =
             risk_summary=doc_result.risk_summary,
             verification_summary=doc_result.verification_summary,
         )
+    except ConnectionError as e:
+        raise HTTPException(status_code=503, detail=f"Inference backend unavailable: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Document analysis failed: {str(e)}")

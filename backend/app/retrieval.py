@@ -42,10 +42,11 @@ class GroundingRetriever:
             return []
 
         # Filter indices by risk category (so we only compare against relevant norms)
-        # We do soft matching on risk_category just in case
+        # Normalize casing and whitespace for robust soft-matching
+        target_cat = risk_category.strip().lower()
         valid_indices = [
             i for i, item in enumerate(self.corpus) 
-            if item["risk_category"] == risk_category
+            if item["risk_category"].strip().lower() == target_cat
         ]
         
         if not valid_indices:

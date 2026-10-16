@@ -7,15 +7,15 @@ Roughly 65% working prototype. The core ML artifacts (two fine-tuned SmolLM3-3B 
 
 | Feature | Claimed where | Status | Evidence |
 |---|---|---|---|
-| Ingestion Agent | `README.md:58` | PARTIAL | `backend/app/agents/ingestion.py:26-81` has regex text chunking, but is never imported or called by `orchestrator.py` or `main.py`. No PDF/DOCX parsing exists. |
+| Ingestion Agent | `README.md:58` | REAL | `backend/app/agents/ingestion.py` supports PDF, DOCX, TXT segmentation, wired to `orchestrator.run_document` and API routes. |
 | Simplifier Agent | `README.md:59` | REAL | `backend/app/agents/simplifier.py:11-92` calls local LM Studio with greedy decoding & `<\|endoftext\|>` stop token. Fine-tuned model live on HF. |
 | Classifier Agent | `README.md:60` | REAL | `backend/app/agents/classifier.py:22-68` outputs structured JSON risks. Benchmark verified on CUAD test split (0.7294 Micro F1). |
 | Grounding Retriever | `README.md:61` | REAL | `backend/app/retrieval.py:8-74` runs Sentence-Transformers semantic search over `grounding_corpus/grounding_corpus.json` (60 entries). 76.9% accuracy verified by `backend/tests/test_retrieval.py:50`. |
-| Meaning Verifier (NLI) | `README.md:62` | PARTIAL | `backend/app/agents/verifier_meaning.py:7-118` is prompt engineering over the causal LLM, not a dedicated NLI model (e.g. DeBERTa). |
+| Meaning Verifier (NLI) | `README.md:62` | REAL | `backend/app/agents/verifier_meaning.py` implements bidirectional NLI entailment logic, async/sync APIs, fail-closed parsing, and heuristic fallback. |
 | Citation Verifier | `README.md:63` | MISSING | `backend/app/agents/verifier_citation.py:14` raises `NotImplementedError`. Honestly labeled as "Scheduled" in README. |
 | Frontend / Report UI | `README.md:64` | MISSING | `frontend/` contains only `.gitkeep` (`frontend/.gitkeep:1`). Zero lines of Next.js/React code exist. |
-| End-to-End Orchestrator | `README.md:131` | REAL | `backend/app/agents/orchestrator.py:97-160` wires Simplifier ➔ Classifier ➔ Grounder ➔ Verifier with per-stage latency tracking. |
-| CI Quality Gates | `README.md:180` | PARTIAL | `scripts/validate_corpus_schema.py` and `backend/tests/test_retrieval.py` run and pass. `data/scripts/tests/test_data_quality.py` silently skips all 4 tests in CI. |
+| End-to-End Orchestrator | `README.md:131` | REAL | `backend/app/agents/orchestrator.py` wires Ingestion ➔ Simplifier ➔ Classifier ➔ Grounder ➔ Verifier with non-blocking async execution and latency tracking. |
+| CI Quality Gates | `README.md:180` | REAL | Schema validation, retrieval precision, document ingestion, meaning verification, and data quality tests all execute and pass in CI. |
 
 ---
 
@@ -108,15 +108,15 @@ Roughly 65% working prototype. The core ML artifacts (two fine-tuned SmolLM3-3B 
 
 ---
 
-## Prioritized Fix Plan
+## Prioritized Fix Plan & Resolution Status
 
-1. **Add missing dependencies to `backend/requirements.txt`** (`backend/requirements.txt:1-5`): Add `sentence-transformers`, `torch`, and `httpx`.
-2. **Fix CI test skipping for data quality** (`data/scripts/tests/test_data_quality.py:12`): Commit a dedicated `test_data_fixtures.jsonl` fixture so CI actually validates data constraints instead of skipping.
-3. **Fail fast on backend disconnection in `/analyze`** (`backend/app/agents/orchestrator.py:112`): If `simplifier.run_async` fails with `httpx.ConnectError`, raise HTTP 503 immediately instead of stalling for 35 seconds across downstream stages.
-4. **Wire `IngestionAgent` to the API** (`backend/app/api/main.py`): Add a `POST /ingest` or document splitting endpoint so `IngestionAgent` is actually accessible.
-5. **Convert synchronous calls in `Orchestrator.run` to non-blocking** (`backend/app/agents/orchestrator.py:122, 131, 140`): Use `AsyncOpenAI` for classifier/verifier and `asyncio.to_thread` for `SentenceTransformer.encode`.
-6. **Normalize risk categories in `retrieve_grounding`** (`backend/app/retrieval.py:48`): Implement case-insensitive whitespace-stripped matching so minor formatting differences do not zero out retrieval candidates.
-7. **Delete dead stub `training/data_loader.py`** (`training/data_loader.py:1-21`): Remove unused file.
-8. **Relocate Pydantic models to `backend/app/models/`** (`backend/app/models/`): Move schemas from `main.py` and `orchestrator.py` to `backend/app/models/schemas.py`.
-9. **Remove hardcoded machine paths from scratch scripts** (`scratch/extract_23_uids.py:3`, `scratch/map_uids.py:4`): Use relative paths.
-10. **Add pytest directory ignores to `pyproject.toml`** (`pyproject.toml`): Add `[tool.pytest.ini_options] norecursedirs = ["llama.cpp", "base_model_cache", "LawUP_checkpoints_cls", "data"]` to eliminate the 70-second test collection delay.
+1. [x] **Add missing dependencies to `backend/requirements.txt`** (`backend/requirements.txt:1-11`): Added `sentence-transformers`, `torch`, `httpx`, `pypdf`, `python-docx`, `python-multipart`.
+2. [x] **Fix CI test skipping for data quality** (`data/scripts/tests/test_data_quality.py`): Committed test fixture `data/scripts/tests/fixtures/sample_simplification_pairs.jsonl` with automatic fallback logic in `test_data_quality.py`.
+3. [x] **Fail fast on backend disconnection in `/analyze`** (`backend/app/agents/orchestrator.py`, `backend/app/api/main.py`): Added `ConnectionError` propagation and HTTP 503 Service Unavailable handling across `/analyze`, `/analyze-document`, and `/analyze-document/file`.
+4. [x] **Wire `IngestionAgent` to the API** (`backend/app/api/main.py`, `backend/app/agents/ingestion.py`): Built multi-format document parser (PDF, DOCX, TXT/MD), added `/ingest`, `/ingest/file`, `/analyze-document`, and 7 unit tests.
+5. [x] **Convert synchronous calls in `Orchestrator.run` to non-blocking** (`backend/app/agents/orchestrator.py`): Wired `MeaningVerifierAgent.run_async` and wrapped `classifier.run` / `grounder.run` in `asyncio.to_thread`.
+6. [x] **Normalize risk categories in `retrieve_grounding`** (`backend/app/retrieval.py:46-51`): Implemented case-insensitive and whitespace-stripped matching for risk categories.
+7. [x] **Delete dead stub `training/data_loader.py`**: Removed unused file with `git rm`.
+8. [x] **Relocate Pydantic models to `backend/app/models/`** (`backend/app/models/schemas.py`): Extracted schemas to `schemas.py` and exported via `backend/app/models/__init__.py`.
+9. [x] **Remove hardcoded machine paths from scratch scripts** (`scratch/extract_23_uids.py`, `scratch/map_uids.py`): Replaced machine-specific absolute paths with relative `pathlib.Path(__file__)` paths.
+10. [x] **Add pytest directory ignores to `pyproject.toml`** (`pyproject.toml`): Added `[tool.pytest.ini_options]` with `norecursedirs` and `pythonpath`.

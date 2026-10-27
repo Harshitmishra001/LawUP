@@ -43,6 +43,10 @@ jobs:
         run: |
           pytest backend/tests/test_verifier_citation.py -v
 
+      - name: Run dashboard UI tests
+        run: |
+          pytest backend/tests/test_dashboard_ui.py -v
+
       - name: Run data quality tests
         run: |
           pytest data/scripts/tests/test_data_quality.py -v

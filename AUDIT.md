@@ -13,7 +13,7 @@ Roughly 65% working prototype. The core ML artifacts (two fine-tuned SmolLM3-3B 
 | Grounding Retriever | `README.md:61` | REAL | `backend/app/retrieval.py:8-74` runs Sentence-Transformers semantic search over `grounding_corpus/grounding_corpus.json` (60 entries). 76.9% accuracy verified by `backend/tests/test_retrieval.py:50`. |
 | Meaning Verifier (NLI) | `README.md:62` | REAL | `backend/app/agents/verifier_meaning.py` implements bidirectional NLI entailment logic, async/sync APIs, fail-closed parsing, and heuristic fallback. |
 | Citation Verifier | `README.md:63` | REAL | `backend/app/agents/verifier_citation.py` validates citation support against risk claims and drops ungrounded references. |
-| Frontend / Report UI | `README.md:64` | MISSING | `frontend/` contains only `.gitkeep` (`frontend/.gitkeep:1`). Zero lines of Next.js/React code exist. |
+| Frontend / Report UI | `README.md:64` | REAL | Interactive web dashboard in `frontend/` with contract upload (PDF/DOCX/TXT), side-by-side legalese vs plain English, risk tags, statutory grounding, bidirectional NLI badges, and stage latency metrics. |
 | End-to-End Orchestrator | `README.md:131` | REAL | `backend/app/agents/orchestrator.py` wires Ingestion ➔ Simplifier ➔ Classifier ➔ Grounder ➔ Verifier with non-blocking async execution and latency tracking. |
 | CI Quality Gates | `README.md:180` | REAL | Schema validation, retrieval precision, document ingestion, meaning verification, and data quality tests all execute and pass in CI. |
 

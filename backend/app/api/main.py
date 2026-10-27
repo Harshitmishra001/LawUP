@@ -6,6 +6,7 @@ import time
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.staticfiles import StaticFiles
 from transformers import AutoTokenizer
 
 from shared.prompt_utils import format_prompt
@@ -225,3 +226,13 @@ async def analyze_document_file(file: UploadFile = File(...), max_clauses: int =
         raise HTTPException(status_code=503, detail=f"Inference backend unavailable: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Document analysis failed: {str(e)}")
+
+
+# ---------------------------------------------------------------------------
+# Interactive Web Dashboard Mount
+# ---------------------------------------------------------------------------
+_project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+_frontend_dir = os.path.join(_project_root, "frontend")
+if os.path.isdir(_frontend_dir):
+    app.mount("/", StaticFiles(directory=_frontend_dir, html=True), name="frontend")
+

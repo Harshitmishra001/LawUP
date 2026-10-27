@@ -1,0 +1,134 @@
+/* LawUP Modern Web Interface Styles */
+
+:root {
+  --primary-navy: #0f172a;
+  --accent-blue: #2563eb;
+  --accent-teal: #0d9488;
+  --risk-high: #dc2626;
+  --risk-high-bg: #fef2f2;
+  --risk-med: #d97706;
+  --risk-med-bg: #fffbeb;
+  --risk-low: #2563eb;
+  --risk-low-bg: #eff6ff;
+  --risk-pass: #16a34a;
+  --risk-pass-bg: #f0fdf4;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color: #1e293b;
+  background-color: #f8fafc;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Tab button transitions */
+.tab-btn {
+  transition: all 0.2s ease-in-out;
+}
+.tab-btn.active {
+  border-bottom: 2px solid #2563eb;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+/* Card hover and focus states */
+.clause-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.clause-card:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.05), 0 8px 10px -6px rgba(15, 23, 42, 0.03);
+}
+
+/* Pulse indicator for live connection */
+.status-pulse {
+  animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes pulse-ring {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+/* Stage stepper styles */
+.stage-step {
+  transition: all 0.2s ease;
+}
+.stage-step.active {
+  border-color: #3b82f6;
+  background-color: #eff6ff;
+  color: #1d4ed8;
+}
+.stage-step.completed {
+  border-color: #10b981;
+  background-color: #ecfdf5;
+  color: #047857;
+}
+
+/* Difference / comparison highlighting */
+.span-omission {
+  background-color: #fee2e2;
+  color: #991b1b;
+  text-decoration: underline wavy #ef4444;
+  padding: 0 3px;
+  border-radius: 2px;
+}
+.span-hallucination {
+  background-color: #fef3c7;
+  color: #92400e;
+  text-decoration: underline wavy #f59e0b;
+  padding: 0 3px;
+  border-radius: 2px;
+}
+
+/* Drag and Drop Zone */
+.dropzone {
+  border: 2px dashed #cbd5e1;
+  transition: all 0.2s ease;
+}
+.dropzone.dragover {
+  border-color: #3b82f6;
+  background-color: #eff6ff;
+  transform: scale(1.01);
+}
+
+/* Code and Token Badges */
+.token-chip {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Print Friendly Styles */
+@media print {
+  header, nav, .no-print, button, .tab-navigation {
+    display: none !important;
+  }
+  body {
+    background-color: white !important;
+    color: black !important;
+  }
+  .clause-card {
+    page-break-inside: avoid;
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+    margin-bottom: 20px !important;
+  }
+}

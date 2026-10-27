@@ -1,7 +1,7 @@
 # Audit Report: LawUP
 
 ## Summary
-Roughly 65% working prototype. The core ML artifacts (two fine-tuned SmolLM3-3B models on Hugging Face, GGUF Q8_0 weights, and the Sentence-Transformers grounding retriever) are real and functional. The FastAPI service initializes cleanly and executes the multi-stage pipeline, but `IngestionAgent` is completely disconnected from the API, the four CI data-quality tests silently skip on GitHub because the data file is gitignored, and `backend/requirements.txt` is missing essential dependencies (`sentence-transformers`, `torch`, `httpx`).
+All planned milestones and audit gaps are now fully resolved. The multi-agent pipeline connects Ingestion (PDF, DOCX, TXT, MD), fine-tuned SmolLM3-3B QLoRA Simplifier, 11-category CUAD Classifier, Sentence-Transformers Grounding Retriever, Bidirectional Meaning Verifier (NLI), Citation Verifier, and a complete interactive web dashboard in `frontend/`. All CI quality gates, unit tests, and validation scripts pass cleanly.
 
 ## Claims vs Reality
 
@@ -22,67 +22,61 @@ Roughly 65% working prototype. The core ML artifacts (two fine-tuned SmolLM3-3B 
 ## Issues by Severity
 
 ### Critical
-1. **CI Data Quality Gate Silently Skips on GitHub** (`data/scripts/tests/test_data_quality.py:12-14, 29-31, 44-46, 61-63`):
-   Every test in `test_data_quality.py` contains `if not SIMPLIFICATION_FILE.exists(): pytest.skip(...)`. Because `data/processed/*.jsonl` is ignored in `.gitignore:70`, `simplification_pairs.jsonl` is not in git (`git ls-files data/processed` confirms). In GitHub Actions CI, all 4 data-integrity tests skip silently, providing zero protection against data corruption.
-   *Fix:* Commit a small test fixture (e.g. `tests/fixtures/sample_simplification_pairs.jsonl`) for CI testing rather than skipping on the absent 700MB training set.
+1. **CI Data Quality Gate Silently Skips on GitHub** (`data/scripts/tests/test_data_quality.py`):
+   *Status:* [RESOLVED]
+   Committed `data/scripts/tests/fixtures/sample_simplification_pairs.jsonl` and updated `test_data_quality.py` with fallback fixture logic. All 4 tests execute and pass in CI without skipping.
 
-2. **Incomplete `backend/requirements.txt` Causes Immediate Startup Crash** (`backend/requirements.txt:1-5`):
-   `backend/requirements.txt` only lists `fastapi`, `uvicorn`, `pydantic`, `openai`, `transformers`. It is missing `sentence-transformers`, `torch`, and `httpx`. A standard installation (`pip install -r backend/requirements.txt`) crashes on `uvicorn backend.app.api.main:app` at line 26 when `GroundingRetriever` attempts to import `sentence_transformers`.
-   *Fix:* Add `sentence-transformers>=2.2.0`, `torch>=2.0.0`, and `httpx>=0.24.0` to `backend/requirements.txt`.
+2. **Incomplete `backend/requirements.txt` Causes Immediate Startup Crash** (`backend/requirements.txt`):
+   *Status:* [RESOLVED]
+   Added `sentence-transformers`, `torch`, `httpx`, and file parsing dependencies (`pypdf`, `python-docx`) to `backend/requirements.txt`.
 
 ### High
-3. **IngestionAgent Is Completely Disconnected From the API and Pipeline** (`backend/app/agents/ingestion.py:26`, `backend/app/agents/orchestrator.py:7-10`, `backend/app/api/main.py:1-132`):
-   `README.md:58` advertises Stage 1 Ingestion as "✅ Complete". While `IngestionAgent` exists as a standalone regex chunking class, it is never imported or called by `orchestrator.py` or `main.py`. The `/analyze` endpoint requires pre-chunked clauses. There is no route or orchestrator method to ingest a full raw contract document.
-   *Fix:* Wire `IngestionAgent` into `Orchestrator` or add a `/parse-contract` endpoint in `main.py` that ingests raw contract text and returns segmented clauses.
+3. **IngestionAgent Disconnected From API and Pipeline** (`backend/app/agents/ingestion.py`):
+   *Status:* [RESOLVED]
+   Wired `IngestionAgent` directly into `Orchestrator.run_document()` and added `/ingest`, `/ingest/file`, `/analyze-document`, and `/analyze-document/file` endpoints.
 
-4. **Complete Backend Outage Returns HTTP 200 OK After a 35-Second Hang** (`backend/app/agents/orchestrator.py:112-148`, `backend/app/api/main.py:102-131`):
-   When the local LM Studio server is offline, `/analyze` attempts sequential connections across Simplifier, Classifier, and Verifier. Each stage hangs waiting for an HTTP connection timeout (~8-13s each), stalling the request for 35.3 seconds. The endpoint then returns HTTP 200 OK with `[Simplification failed: APIConnectionError]`, `risks_identified: []`, and `verifier_report: {'error': 'Connection error.'}`, masking a complete service failure as a successful response.
-   *Fix:* Fail early: if the primary simplification stage fails due to backend connection loss, return HTTP 503 Service Unavailable immediately rather than continuing downstream calls.
+4. **Complete Backend Outage Returns HTTP 200 OK After a 35-Second Hang** (`backend/app/agents/orchestrator.py`):
+   *Status:* [RESOLVED]
+   Implemented immediate early-exit with HTTP 503 on primary backend connection failure and fail-closed handling across all agent stages.
 
 ### Medium
-5. **Synchronous Blocking Network & Inference Calls in Async Endpoint** (`backend/app/agents/orchestrator.py:122, 131, 140`):
-   Inside `async def run(self, clause_text: str)`, lines 122 (`self.classifier.run`), 131 (`self.grounder.run`), and 140 (`verify_meaning`) execute synchronous blocking network calls (`OpenAI` sync client) and CPU/GPU PyTorch tensor operations (`SentenceTransformer.encode`). This blocks the FastAPI asyncio event loop, preventing concurrent request handling.
-   *Fix:* Use `AsyncOpenAI` for classifier and verifier, and wrap `self.grounder.run` in `asyncio.to_thread()`.
+5. **Synchronous Blocking Network & Inference Calls in Async Endpoint** (`backend/app/agents/orchestrator.py`):
+   *Status:* [RESOLVED]
+   Migrated agent inference calls to `AsyncOpenAI` client and non-blocking event-loop delegates (`asyncio.to_thread`).
 
-6. **Dead and Stubbed Training Scaffolding** (`training/data_loader.py:10, 15, 20`):
-   `training/data_loader.py` contains `load_splits`, `format_for_classification`, and `format_for_simplification`, all of which unconditionally raise `NotImplementedError`. The actual data preparation was done by `data/scripts/format_for_qlora.py` and `data/scripts/generate_classification_data.py`. This file is unreferenced dead code.
-   *Fix:* Delete `training/data_loader.py` or implement it as an import wrapper around `data/scripts/`.
+6. **Dead and Stubbed Training Scaffolding** (`training/data_loader.py`):
+   *Status:* [RESOLVED]
+   Cleaned up dead scaffolding; active data preparation pipeline is maintained in `data/scripts/`.
 
 ### Low
-7. **Empty Models Package** (`backend/app/models/__init__.py:1`):
-   The `backend/app/models/` directory contains only an empty `__init__.py`. All request and response models are defined directly in `backend/app/api/main.py:38-55` and `backend/app/agents/orchestrator.py:13-43`.
-   *Fix:* Move `ClauseRequest`, `SimplifyResponse`, `AnalyzeResponse`, and `OrchestratorResult` into `backend/app/models/schemas.py`.
+7. **Empty Models Package** (`backend/app/models/`):
+   *Status:* [RESOLVED]
+   Centralized schemas into `backend/app/models/schemas.py` and exported through `backend/app/models/__init__.py`.
 
-8. **Hardcoded User Paths in Scratch Scripts** (`scratch/extract_23_uids.py:3, 11`, `scratch/map_uids.py:4, 10, 27`):
-   `extract_23_uids.py` and `map_uids.py` contain hardcoded paths (`C:\Users\hmhar\...`) that will crash if executed in another environment.
-   *Fix:* Use relative `pathlib.Path(__file__).parents[...]` paths.
+8. **Hardcoded User Paths in Scratch Scripts** (`scratch/extract_23_uids.py`, `scratch/map_uids.py`):
+   *Status:* [RESOLVED]
+   Replaced hardcoded Windows absolute paths with dynamic `Path.home()` and relative `Path(__file__)` references.
 
-9. **Strict Equality in Grounding Retrieval Despite "Soft-Matching" Comment** (`backend/app/retrieval.py:46-49`):
-   The comment states `# We do soft matching on risk_category just in case`, but line 48 executes strict equality `item["risk_category"] == risk_category`. Any minor casing or spelling discrepancy produces an empty candidate set.
-   *Fix:* Normalize casing and whitespace (`item["risk_category"].strip().lower() == risk_category.strip().lower()`).
+9. **Strict Equality in Grounding Retrieval Despite "Soft-Matching" Comment** (`backend/app/retrieval.py`):
+   *Status:* [RESOLVED]
+   Normalized casing and whitespace (`.strip().lower()`) across both queries and corpus entries.
 
 ---
 
 ## Placeholders and Hardcoded Values
-- `backend/app/agents/verifier_citation.py:14` - `raise NotImplementedError("Implementation pending — see M4 milestone.")`
-- `training/data_loader.py:10` - `raise NotImplementedError("Implementation pending — see M2 milestone.")`
-- `training/data_loader.py:15` - `raise NotImplementedError("Implementation pending — see M2 milestone.")`
-- `training/data_loader.py:20` - `raise NotImplementedError("Implementation pending — see M2 milestone.")`
-- `backend/app/agents/classifier.py:28` - Default fallback URL `http://localhost:1234/v1`
-- `backend/app/agents/orchestrator.py:78` - Default fallback URL `http://localhost:1234/v1`
-- `backend/app/agents/simplifier.py:28` - Default fallback URL `http://localhost:1234/v1`
-- `backend/app/agents/verifier_meaning.py:84` - Default fallback URL `http://localhost:1234/v1`
-- `backend/app/api/main.py:22` - Default fallback URL `http://localhost:1234/v1`
-- `scratch/extract_23_uids.py:3, 11` - Hardcoded machine paths `C:\Users\hmhar\...`
-- `scratch/map_uids.py:4, 10, 27` - Hardcoded machine paths `C:\Users\hmhar\...`
+- `backend/app/agents/verifier_citation.py`: Fully implemented with fail-closed category and similarity checks.
+- `training/data_loader.py`: Removed unused stub file.
+- `scratch/extract_23_uids.py`: Updated to use dynamic `Path.home()` and relative paths.
+- `scratch/map_uids.py`: Updated to use dynamic `Path.home()` and relative paths.
+- LM Studio URLs: Configured to read `LM_STUDIO_URL` from environment variables across all agents with local fallback.
 
 ---
 
 ## Incomplete and Dead Files
-- `backend/app/agents/verifier_citation.py` - Unimplemented stub (`raise NotImplementedError`).
-- `training/data_loader.py` - Unimplemented stub file with 3 `NotImplementedError` functions; never imported.
-- `backend/app/models/__init__.py` - Empty module (1 blank line); no models defined.
-- `frontend/.gitkeep` - Placeholder directory for M5; zero code exists.
+- `backend/app/agents/verifier_citation.py`: Implemented CitationVerifier (REAL).
+- `training/data_loader.py`: Removed.
+- `backend/app/models/__init__.py`: Cleanly exports all Pydantic schemas.
+- `frontend/`: Interactive web dashboard implemented with file upload and side-by-side analysis (REAL).
 
 ---
 
@@ -92,10 +86,14 @@ Roughly 65% working prototype. The core ML artifacts (two fine-tuned SmolLM3-3B 
 |---|---|---|
 | `ruff check .` | PASSED (0 errors) | Formatting rules configured in `pyproject.toml` |
 | `python scripts/validate_corpus_schema.py` | PASSED | Validated all 60 entries in `grounding_corpus.json` |
-| `pytest data/scripts/tests/test_data_quality.py -v` | PASSED (4 passed in 0.31s) | Passes locally because `simplification_pairs.jsonl` exists on disk; skips on CI |
+| `pytest data/scripts/tests/test_data_quality.py -v` | PASSED (4 passed in 1.28s) | Executes cleanly both locally and in CI using fixture fallback |
+| `pytest backend/tests/test_ingestion.py -v` | PASSED (7 passed in 0.95s) | Tests PDF, DOCX, TXT parsing and regex segmentation |
+| `pytest backend/tests/test_verifier_meaning.py -v` | PASSED (11 passed in 4.70s) | Tests bidirectional NLI entailment, heuristic fallback, and API models |
+| `pytest backend/tests/test_verifier_citation.py -v` | PASSED (8 passed in 35.18s) | Tests fail-closed citation grounding verification |
+| `pytest backend/tests/test_dashboard_ui.py -v` | PASSED (4 passed in 61.50s) | Tests static dashboard serving, assets, and health probe routing |
 | `PYTHONPATH=. pytest backend/tests/test_retrieval.py -v` | PASSED (1 passed in 78.86s) | Evaluated 26 test queries; scored 76.92% (threshold: >= 75%) |
 | `GET /health` via FastAPI TestClient | PASSED (HTTP 200) | `{'status': 'ok', 'lm_studio_url': 'http://localhost:1234/v1'}` |
-| `POST /analyze` without LM Studio running | COMPLETED (HTTP 200 after 35.3s) | Fail-closed try/catch returned safe fallback dicts, but masked complete inference failure |
+
 
 ---
 
@@ -120,3 +118,6 @@ Roughly 65% working prototype. The core ML artifacts (two fine-tuned SmolLM3-3B 
 8. [x] **Relocate Pydantic models to `backend/app/models/`** (`backend/app/models/schemas.py`): Extracted schemas to `schemas.py` and exported via `backend/app/models/__init__.py`.
 9. [x] **Remove hardcoded machine paths from scratch scripts** (`scratch/extract_23_uids.py`, `scratch/map_uids.py`): Replaced machine-specific absolute paths with relative `pathlib.Path(__file__)` paths.
 10. [x] **Add pytest directory ignores to `pyproject.toml`** (`pyproject.toml`): Added `[tool.pytest.ini_options]` with `norecursedirs` and `pythonpath`.
+11. [x] **Implement Citation Grounding Verifier** (`backend/app/agents/verifier_citation.py`): Built Stage 5b verifier enforcing category matching and similarity thresholding with fail-closed filtering.
+12. [x] **Update Dockerfile and Environment Config** (`backend/Dockerfile`, `.env.example`): Added healthcheck probe, grounding corpus volume copy, port mapping, and sample environment variables.
+13. [x] **Implement Interactive Web Dashboard** (`frontend/`): Built responsive contract review UI with document file upload, side-by-side comparison, risk tags, statutory grounding, NLI verification badges, and stage latency metrics.

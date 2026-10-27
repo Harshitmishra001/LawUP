@@ -39,6 +39,10 @@ jobs:
         run: |
           pytest backend/tests/test_verifier_meaning.py -v
 
+      - name: Run citation verifier tests
+        run: |
+          pytest backend/tests/test_verifier_citation.py -v
+
       - name: Run data quality tests
         run: |
           pytest data/scripts/tests/test_data_quality.py -v

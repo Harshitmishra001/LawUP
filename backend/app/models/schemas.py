@@ -24,6 +24,7 @@ class AnalyzeResponse(BaseModel):
     risks_identified: List[Dict[str, Any]]
     grounding_references: List[Dict[str, Any]]
     verifier_report: Dict[str, Any]
+    citation_report: Optional[Dict[str, Any]] = None
     total_latency_ms: float
     stage_latencies_ms: Dict[str, float]
 

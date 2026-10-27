@@ -164,6 +164,7 @@ async def analyze_clause(request: ClauseRequest):
         risks_identified=result.risks_identified,
         grounding_references=result.grounding_references,
         verifier_report=result.verifier_report,
+        citation_report=result.citation_report,
         total_latency_ms=result.total_latency_ms,
         stage_latencies_ms=result.stage_latencies_ms,
     )

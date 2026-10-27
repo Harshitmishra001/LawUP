@@ -13,6 +13,7 @@ from backend.app.agents.classifier import ClassificationAgent
 from backend.app.agents.grounding import GroundingAgent
 from backend.app.agents.ingestion import IngestionAgent, ClauseUnit
 from backend.app.agents.verifier_meaning import MeaningVerifierAgent
+from backend.app.agents.verifier_citation import CitationVerifier
 
 
 class OrchestratorResult:
@@ -27,12 +28,14 @@ class OrchestratorResult:
         verifier_report: Dict[str, Any],
         total_latency_ms: float,
         stage_latencies_ms: Dict[str, float],
+        citation_report: Optional[Dict[str, Any]] = None,
     ):
         self.original_clause = original_clause
         self.simplified_rewrite = simplified_rewrite
         self.risks_identified = risks_identified
         self.grounding_references = grounding_references
         self.verifier_report = verifier_report
+        self.citation_report = citation_report or {}
         self.total_latency_ms = total_latency_ms
         self.stage_latencies_ms = stage_latencies_ms
 
@@ -43,6 +46,7 @@ class OrchestratorResult:
             "risks_identified": self.risks_identified,
             "grounding_references": self.grounding_references,
             "verifier_report": self.verifier_report,
+            "citation_report": self.citation_report,
             "total_latency_ms": self.total_latency_ms,
             "stage_latencies_ms": self.stage_latencies_ms,
         }
@@ -120,6 +124,7 @@ class Orchestrator:
             model_name=verifier_model,
             lm_studio_url=lm_studio_url,
         )
+        self.citation_verifier = CitationVerifier()
         self.verifier_model = verifier_model
 
     def parse_document(
@@ -166,11 +171,40 @@ class Orchestrator:
         # --- Stage 4: Grounding Retrieval ---
         t = time.time()
         try:
-            grounding_refs = await asyncio.to_thread(self.grounder.run, risks=risks, clause_text=clause)
+            raw_grounding_refs = await asyncio.to_thread(self.grounder.run, risks=risks, clause_text=clause)
         except Exception as e:
             print(f"[Orchestrator] Grounder failed: {e}")
-            grounding_refs = []
+            raw_grounding_refs = []
         stage_latencies["grounder_ms"] = (time.time() - t) * 1000
+
+        # --- Stage 5b: Citation Grounding Verification ---
+        t = time.time()
+        try:
+            cit_res = await self.citation_verifier.run_async(
+                clause_text=clause,
+                risks=risks,
+                grounding_references=raw_grounding_refs,
+            )
+            grounding_refs = cit_res["verified_references"]
+            citation_report = {
+                "verdict": cit_res["verdict"],
+                "total_checked": cit_res["total_checked"],
+                "total_supported": cit_res["total_supported"],
+                "total_dropped": cit_res["total_dropped"],
+                "details": cit_res["details"],
+            }
+        except Exception as e:
+            print(f"[Orchestrator] Citation Verifier failed: {e}")
+            grounding_refs = []  # Fail-closed
+            citation_report = {
+                "verdict": "FAIL",
+                "total_checked": len(raw_grounding_refs),
+                "total_supported": 0,
+                "total_dropped": len(raw_grounding_refs),
+                "error": str(e),
+                "details": [],
+            }
+        stage_latencies["citation_verifier_ms"] = (time.time() - t) * 1000
 
         # --- Stage 5a: Meaning Verification ---
         t = time.time()
@@ -199,6 +233,7 @@ class Orchestrator:
             risks_identified=risks,
             grounding_references=grounding_refs,
             verifier_report=verifier_report,
+            citation_report=citation_report,
             total_latency_ms=total_latency_ms,
             stage_latencies_ms=stage_latencies,
         )
